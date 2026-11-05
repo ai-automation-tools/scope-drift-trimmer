@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/now-slice_0:_gate_check-F59E0B?style=for-the-badge" alt="Now: Slice 0, gate check">
+  <img src="https://img.shields.io/badge/now-slice_1:_engine_and_rules-F59E0B?style=for-the-badge" alt="Now: Slice 1, engine and rules">
   <img src="https://img.shields.io/badge/stage-incubating-2ea44f?style=for-the-badge" alt="Stage: incubating">
   <a href="README.md"><img src="https://img.shields.io/badge/↩-docs_home-6B7280?style=for-the-badge" alt="Back to docs"></a>
 </p>
@@ -31,7 +31,7 @@ this repo owns; no item needs a real tenant, a credential or network access.
 
 ## 🧭 Slice 0: Gate check
 
-- [ ] `small` **Is this already built?** Write `docs/reports/2026-11-prior-art-check.md`, the decision memo's 2026-11-19 check: is there a maintained open-source tool that already joins Entra ID app permissions and AWS IAM grants to their usage, per identity, and drafts the trim? Look at least at Cloudsplaining, Parliament, Prowler's IAM checks, PMapper, AzureHound/ROADtools and any Entra Permissions Management replacement announced since 2025-11-01. Link each repo or doc, say when it was checked, and end with a one-line verdict. If one already covers the spec's Musts, add a `🔒 Needs owner` item under this one asking whether to stop (the build plan's first stop rule) and build nothing else until Mike answers. Link the report from `docs/README.md`.
+- [x] `small` **Is this already built?** Write `docs/reports/2026-11-prior-art-check.md`, the decision memo's 2026-11-19 check: is there a maintained open-source tool that already joins Entra ID app permissions and AWS IAM grants to their usage, per identity, and drafts the trim? Look at least at Cloudsplaining, Parliament, Prowler's IAM checks, PMapper, AzureHound/ROADtools and any Entra Permissions Management replacement announced since 2025-11-01. Link each repo or doc, say when it was checked, and end with a one-line verdict. If one already covers the spec's Musts, add a `🔒 Needs owner` item under this one asking whether to stop (the build plan's first stop rule) and build nothing else until Mike answers. Link the report from `docs/README.md`. — done 2026-11-05: `docs/reports/2026-11-prior-art-check.md` checks 13 tools; none covers the Musts (Prowler is closest but needs Defender App Governance for Entra usage and has no per-role AWS usage join), so no stop question
 
 ## ⚖️ Slice 1: Engine and rules
 
