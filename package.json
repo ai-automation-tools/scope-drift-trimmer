@@ -1,0 +1,32 @@
+{
+  "name": "scope-drift-trimmer",
+  "version": "0.0.0",
+  "description": "Lists what each non-human identity was granted next to what it used, grades the evidence, and drafts the trim for a human to run.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Mike Schecht",
+  "bin": {
+    "sdt": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --test",
+    "lint": "eslint . && tsc --noEmit"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "typescript": "~6.0",
+    "typescript-eslint": "^8.72.1"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
+  }
+}
