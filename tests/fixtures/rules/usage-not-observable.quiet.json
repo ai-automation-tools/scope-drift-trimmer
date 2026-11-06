@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "aws:role/d",
+      "kind": "service-account",
+      "platform": "aws",
+      "displayName": "role/d",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": "2026-10-20T00:00:00Z",
+      "grants": [
+        {
+          "id": "iam:PassRole",
+          "resource": "res:iam:PassRole",
+          "permission": "iam:PassRole",
+          "access": "read",
+          "lastUsedAt": null,
+          "usageKnown": false,
+          "observationDays": 90
+        },
+        {
+          "id": "ec2:RunInstances",
+          "resource": "res:ec2:RunInstances",
+          "permission": "ec2:RunInstances",
+          "access": "write",
+          "lastUsedAt": "2026-10-20T00:00:00Z",
+          "usageKnown": true,
+          "observationDays": 90
+        }
+      ]
+    }
+  ]
+}

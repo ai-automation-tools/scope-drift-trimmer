@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "aws:role/c",
+      "kind": "service-account",
+      "platform": "aws",
+      "displayName": "role/c",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": "2026-10-20T00:00:00Z",
+      "grants": [
+        {
+          "id": "iam:PassRole",
+          "resource": "res:iam:PassRole",
+          "permission": "iam:PassRole",
+          "access": "write",
+          "lastUsedAt": null,
+          "usageKnown": false,
+          "observationDays": 90
+        }
+      ]
+    }
+  ]
+}

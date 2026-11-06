@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "github:app/2",
+      "kind": "service-account",
+      "platform": "github",
+      "displayName": "app/2",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": "2026-10-20T00:00:00Z",
+      "grants": [
+        {
+          "id": "administration",
+          "resource": "res:administration",
+          "permission": "administration",
+          "access": "read",
+          "lastUsedAt": null,
+          "usageKnown": false
+        }
+      ]
+    }
+  ]
+}

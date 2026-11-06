@@ -6,7 +6,7 @@
   "license": "MIT",
   "author": "Mike Schecht",
   "bin": {
-    "sdt": "dist/cli.js"
+    "sdt": "dist/src/cli.js"
   },
   "files": [
     "dist"

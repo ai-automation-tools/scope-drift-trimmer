@@ -97,7 +97,7 @@ incubation beyond the repo name below.
 
 | Question | Owner | By |
 |:---|:---|:---|
-| Exact Okta scope-grant revoke endpoint for service apps (believed `DELETE /api/v1/apps/{appId}/grants/{grantId}`, not verified on this run) | Slice 1 run, from Okta docs | Before the Okta draft template ships |
+| ~~Exact Okta scope-grant revoke endpoint for service apps~~ Verified 2026-11-05 from Okta's Management API reference: `DELETE /api/v1/apps/{appId}/grants/{grantId}` (scope `okta.appGrants.manage`); cited in `src/remediation.ts`. | Slice 1 run, from Okta docs | Done |
 | Does `servicePrincipalSignInActivity` need Entra ID P1/P2? | Slice 3 run, from Microsoft docs | Slice 3; a "yes" is fine, a "removed from beta" triggers the memo's falsifier |
 | ~~Repo name: `scope-drift-trimmer` or shorter~~ Settled at incubation (2026-11-05): `ai-automation-tools/scope-drift-trimmer`, CLI `sdt`. Mike can still rename it before graduation. | Mike | Done |
 
