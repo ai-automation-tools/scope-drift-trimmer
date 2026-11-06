@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "azure-entra:sp/aaaa",
+      "kind": "service-account",
+      "platform": "azure-entra",
+      "displayName": "sp/aaaa",
+      "owner": null,
+      "status": "active",
+      "lastUsedAt": null,
+      "grants": [
+        {
+          "id": "Mail.Send",
+          "resource": "res:Mail.Send",
+          "permission": "Mail.Send",
+          "access": "write",
+          "lastUsedAt": null,
+          "usageKnown": true,
+          "observationDays": 90
+        }
+      ]
+    }
+  ]
+}

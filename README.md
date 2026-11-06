@@ -34,9 +34,9 @@
 ---
 
 > [!WARNING]
-> **Nothing works yet.** This is the scaffold. `sdt` prints its version and that's all; the
-> engine, the rules, the importers and the demo arrive one roadmap item at a time. The
-> [roadmap](docs/ROADMAP.md) says what's next.
+> **Early.** `sdt analyze` reads an agent inventory document and runs all four rules with
+> draft fixes. The AWS and Entra importers and the demo are still to come, one roadmap item at
+> a time. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
 
@@ -72,17 +72,60 @@ anything.
 From a clone, with Node 22.18 or newer:
 
 ```bash
-npm install          # dev dependencies only; no runtime dependencies yet
+npm install          # dev dependencies only; there are no runtime dependencies
 npm run build        # compiles src/ to dist/
-node dist/cli.js     # prints "sdt 0.0.0" for now
+node dist/src/cli.js analyze tests/fixtures/estate.inventory.json --out inventory.json
 ```
+
+The fixture is a fictional estate written by another suite tool. The run prints a summary,
+most severe first, and writes the same document back with `scope-drift-trimmer/*` findings
+added; the other tool's identities, findings and `x` data come through unchanged.
+
+```text
+sdt 0.0.0: estate.inventory.json, 8 identities, 15 grants, as of 2026-11-01T00:00:00Z
+Findings: 1 critical, 3 high, 2 medium, 0 low, 4 info
+  CRITICAL  legacy-invoice-sync: Dormant privileged identity with no owner: legacy-invoice-sync has not been used in 90 days and holds Mail.ReadWrite, Mail.Send
+  ...
+```
+
+### Usage
+
+```text
+sdt analyze <inventory.json> [--out <file>] [--fail-on <severity>]
+sdt --version
+```
+
+| Flag | What it does |
+|:---|:---|
+| `--out <file>` | Writes the inventory with this run's findings. Nothing is written when the input is invalid. |
+| `--fail-on <severity>` | Exits 1 when a finding is at or above `critical`, `high`, `medium`, `low` or `info`. For CI. |
+
+Exit codes: `0` ran clean, `1` the `--fail-on` threshold was reached, `2` bad usage or an
+input that isn't a valid [schema v0.1](schemas/agent-inventory.schema.json) inventory (the
+message names the first error's document path and schema path). Re-running on its own output
+replaces its earlier findings and keeps any status a reviewer set, such as `accepted-risk`.
+
+### The rules
+
+| Rule | Fires when | Severity |
+|:---|:---|:---|
+| `dormant-privileged-identity` | The platform records the identity's use, nothing was used in the window, and it holds a `write`/`admin` grant | `critical` with no owner, else `high` |
+| `unused-grant` | A grant whose use is recorded (`usageKnown: true`) wasn't used in its window. Quiet when the identity is already dormant | `high`, `medium` for `read` |
+| `narrower-permission-available` | A grant is in the versioned narrower-permission table (GitHub `administration` → `repository_creation`) | `medium` |
+| `usage-not-observable` | `write`/`admin` grants whose use the platform doesn't record, such as `iam:PassRole`. They are listed, not judged | `info` |
+
+No rule calls a grant unused unless the platform recorded its use over a stated window, and an
+AWS wildcard is never judged from last-accessed data. Every finding's evidence names the data,
+the window and the source file, and every draft starts with `DRAFT. A human reviews and runs
+this. Validate against the target environment first.`
 
 ## 🗂️ What's in here
 
 | Folder | What's inside |
 |:---|:---|
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the spec and build plan, and ADR-001. |
-| [**🧩 src/**](src/) | The `sdt` CLI. One TypeScript core that the browser demo will import too. |
+| [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules and the draft templates. One TypeScript core that the browser demo will import too. |
+| [**📐 schemas/**](schemas/) | The Agent Security Suite's agent inventory schema v0.1, vendored. Every read and write is validated against it. |
 | [**🧪 tests/**](tests/) | `node:test` suites, run with `npm test`. |
 | [**🖥️ site/**](site/) | The demo page and its favicon. A "coming soon" shell for now. |
 

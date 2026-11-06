@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "aws:role/g",
+      "kind": "service-account",
+      "platform": "aws",
+      "displayName": "role/g",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": null,
+      "grants": [
+        {
+          "id": "iam:CreateUser",
+          "resource": "res:iam:CreateUser",
+          "permission": "iam:CreateUser",
+          "access": "superuser",
+          "lastUsedAt": null,
+          "usageKnown": true,
+          "observationDays": 90
+        }
+      ]
+    }
+  ]
+}

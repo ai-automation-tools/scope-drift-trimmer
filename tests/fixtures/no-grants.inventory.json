@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "github:app/9",
+      "kind": "bot",
+      "platform": "github",
+      "displayName": "grantless",
+      "status": "active"
+    }
+  ]
+}

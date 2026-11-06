@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "azure-entra:sp/cccc",
+      "kind": "service-account",
+      "platform": "azure-entra",
+      "displayName": "sp/cccc",
+      "owner": null,
+      "status": "active",
+      "lastUsedAt": "2025-01-01T00:00:00Z",
+      "grants": [
+        {
+          "id": "Mail.ReadWrite",
+          "resource": "res:Mail.ReadWrite",
+          "permission": "Mail.ReadWrite",
+          "access": "write",
+          "lastUsedAt": null,
+          "usageKnown": false,
+          "observationDays": 90
+        },
+        {
+          "id": "Mail.Send",
+          "resource": "res:Mail.Send",
+          "permission": "Mail.Send",
+          "access": "write",
+          "lastUsedAt": null,
+          "usageKnown": false,
+          "observationDays": 90
+        }
+      ]
+    },
+    {
+      "id": "aws:role/e",
+      "kind": "service-account",
+      "platform": "aws",
+      "displayName": "role/e",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": "2025-01-01T00:00:00Z",
+      "grants": [
+        {
+          "id": "iam:PassRole",
+          "resource": "res:iam:PassRole",
+          "permission": "iam:PassRole",
+          "access": "write",
+          "lastUsedAt": null,
+          "usageKnown": false,
+          "observationDays": 90
+        },
+        {
+          "id": "dynamodb:PutItem",
+          "resource": "res:dynamodb:PutItem",
+          "permission": "dynamodb:PutItem",
+          "access": "write",
+          "lastUsedAt": null,
+          "usageKnown": false
+        },
+        {
+          "id": "s3:*",
+          "resource": "res:s3:*",
+          "permission": "s3:*",
+          "access": "admin",
+          "lastUsedAt": null,
+          "usageKnown": true,
+          "observationDays": 90
+        }
+      ]
+    },
+    {
+      "id": "github:app/3",
+      "kind": "service-account",
+      "platform": "github",
+      "displayName": "app/3",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": null,
+      "grants": [
+        {
+          "id": "administration",
+          "resource": "res:administration",
+          "permission": "administration",
+          "access": "write",
+          "lastUsedAt": null,
+          "usageKnown": false,
+          "observationDays": 90
+        },
+        {
+          "id": "contents",
+          "resource": "res:contents",
+          "permission": "contents",
+          "access": "read",
+          "lastUsedAt": null,
+          "usageKnown": false,
+          "observationDays": 90
+        }
+      ]
+    },
+    {
+      "id": "aws:role/f",
+      "kind": "service-account",
+      "platform": "aws",
+      "displayName": "role/f",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": null,
+      "grants": [
+        {
+          "id": "iam:CreateRole",
+          "resource": "res:iam:CreateRole",
+          "permission": "iam:CreateRole",
+          "access": "admin",
+          "lastUsedAt": null,
+          "usageKnown": true
+        }
+      ]
+    }
+  ]
+}

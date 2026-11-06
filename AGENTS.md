@@ -22,7 +22,7 @@ identity as a whole) over the window. It is never inferred from silence, and no 
 calls a `usageKnown: false` grant unused.
 
 **Input and output are the Agent Security Suite's agent inventory format, schema v0.1.** The
-schema gets vendored into `schemas/agent-inventory.schema.json` (Slice 0) and every read and
+schema is vendored at `schemas/agent-inventory.schema.json` (from the org site) and every read and
 write is validated against it. Identity ids are `<platform>:<native id>`. Findings use `ruleId`
 `scope-drift-trimmer/<rule>` and `producer` `{ name: "scope-drift-trimmer", version }`. Other
 producers' identities, findings and `x` data pass through unchanged. Never add a field the

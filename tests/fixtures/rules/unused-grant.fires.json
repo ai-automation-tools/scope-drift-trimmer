@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.1",
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "producer": {
+    "name": "fixture",
+    "version": "0"
+  },
+  "identities": [
+    {
+      "id": "aws:role/a",
+      "kind": "service-account",
+      "platform": "aws",
+      "displayName": "role/a",
+      "owner": {
+        "email": "owner@example.com"
+      },
+      "status": "active",
+      "lastUsedAt": "2026-10-20T00:00:00Z",
+      "grants": [
+        {
+          "id": "iam:CreateUser",
+          "resource": "res:iam:CreateUser",
+          "permission": "iam:CreateUser",
+          "access": "admin",
+          "lastUsedAt": null,
+          "usageKnown": true,
+          "observationDays": 90
+        },
+        {
+          "id": "s3:ListBucket",
+          "resource": "res:s3:ListBucket",
+          "permission": "s3:ListBucket",
+          "access": "read",
+          "lastUsedAt": "2026-10-20T00:00:00Z",
+          "usageKnown": true,
+          "observationDays": 90
+        }
+      ]
+    }
+  ]
+}
