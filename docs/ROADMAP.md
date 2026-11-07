@@ -59,7 +59,7 @@ this repo owns; no item needs a real tenant, a credential or network access.
 
 Nothing below blocks go-live.
 
-## 🧩 Next slices
+### 🧩 Next slices
 
 - [ ] **Slice 4: Okta import.** Service apps, granted scopes and 90 days of System Log events, with the event-to-scope mapping marked as inference in evidence. Fictional fixtures; the Okta draft adds back the `.read` scope when one was observed.
 - [ ] **Slice 5: GitHub import.** App installations and their permissions, plus API-request audit events where the org has them; without them every permission is `usageKnown: false`.
