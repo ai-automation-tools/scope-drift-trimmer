@@ -1,36 +1,178 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Scope Drift Trimmer: what your service accounts hold vs. what they use</title>
-  <meta name="description" content="Lists what each non-human identity was granted next to what it used, grades the evidence, and drafts the trim for a human to run.">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="description" content="Lists what each non-human identity was granted next to what it used, grades the evidence, and drafts the trim for a human to run." />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <meta name="theme-color" content="#060606" />
+  <script>
+    // Pre-paint theme. Default must equal THEME_DEFAULT below.
+    (function () {
+      var t = 'dark';
+      try { var s = localStorage.getItem('scope-drift-trimmer.theme'); if (s === 'light' || s === 'dark') t = s; } catch (e) {}
+      document.documentElement.classList.add(t);
+      if (t === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#fafafa');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root { color-scheme: dark; --bg: #060606; --surface: #0b0b0c; --line: #18181b; --fg: #fafafa; --mid: #a1a1aa; --dim: #71717a; --accent: #d4a373; }
+    :root {
+      color-scheme: dark;
+      --bg: #060606; --dots: rgba(255,255,255,.035);
+      --surface: rgba(24,24,27,.45); --surface-2: rgba(24,24,27,.8);
+      --field: rgba(24,24,27,.4); --hover-bg: rgba(24,24,27,.7);
+      --bar: rgba(6,6,6,.72); --bar-line: rgba(39,39,42,.7); --srcbar-bg: #0a0a0b;
+      --menu-bg: #0a0a0c; --switch-bg: rgba(39,39,42,.6); --thumb: #27272a;
+      --line: rgba(63,63,70,.45); --line-2: rgba(63,63,70,.8); --line-hover: #52525b; --rule: rgba(39,39,42,.6);
+      --fg: #f4f4f5; --fg-2: #d4d4d8; --fg-3: #a1a1aa; --fg-4: #71717a; --fg-5: #52525b;
+      --accent: #d4a373; --accent-hover: #e2bd96; --accent-ink: #1a1208; --glow: rgba(212,163,115,.10);
+      --critical: #f87171; --high: #fb923c; --medium: #facc15; --low: #60a5fa; --info: #a1a1aa;
+      --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+      --r-lg: 12px; --r-md: 8px; --r-sm: 6px;
+      --ease: cubic-bezier(.2,.7,.2,1);
+      --srcbar-h: 34px; --topbar-h: 56px;
+    }
+    html.light {
+      color-scheme: light;
+      --bg: #fafafa; --dots: rgba(0,0,0,.05);
+      --surface: rgba(255,255,255,.75); --surface-2: #fff;
+      --field: #fff; --hover-bg: #f4f4f5;
+      --bar: rgba(250,250,250,.8); --bar-line: #e4e4e7; --srcbar-bg: #f4f4f5;
+      --menu-bg: #fafafa; --switch-bg: rgba(228,228,231,.6); --thumb: #d4d4d8;
+      --line: #e4e4e7; --line-2: #d4d4d8; --line-hover: #a1a1aa; --rule: #e4e4e7;
+      --fg: #09090b; --fg-2: #27272a; --fg-3: #52525b; --fg-4: #63636b; --fg-5: #76767f;
+      --accent: #8a5a2b; --accent-hover: #6f4620; --accent-ink: #fff; --glow: rgba(212,163,115,.12);
+      --critical: #b91c1c; --high: #c2410c; --medium: #a16207; --low: #1d4ed8; --info: #52525b;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg);
-           background-image: radial-gradient(rgba(255,255,255,0.06) 1.2px, transparent 0); background-size: 22px 22px;
-           color: var(--fg); font: 15px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.6 var(--sans); -webkit-font-smoothing: antialiased;
+      background-image: radial-gradient(var(--dots) 1.2px, transparent 0); background-size: 24px 24px; background-attachment: fixed;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+    ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    .skip { position: absolute; left: -9999px; top: 12px; z-index: 80; padding: 6px 12px; border-radius: 6px; background: var(--accent); color: var(--accent-ink); font-size: 14px; font-weight: 600; }
+    .skip:focus { left: 16px; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .wrap { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+    .eyebrow { margin: 0; font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-4); }
+    .eyebrow b { color: var(--accent); font-weight: 500; }
+    .mono { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+    .muted { color: var(--fg-4); }
 
-    /* Org source bar: ai-automation-tools.github.io docs/SOURCE-BAR.md. Full-bleed, top of page, in flow. */
-    .src-bar        { display: flex; align-items: center; gap: 16px; height: 34px; padding: 0 16px;
-                      background: var(--surface); border-bottom: 1px solid var(--line); font-size: 12px; }
-    .src-note       { margin: 0; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--dim); }
-    .src-note strong{ font-weight: 600; color: var(--accent); }
-    .src-link       { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--mid); text-decoration: none; }
-    .src-link:hover, .src-link:focus-visible { color: var(--fg); }
+    .src-bar { display: flex; align-items: center; gap: 16px; height: var(--srcbar-h); padding: 0 16px; background: var(--srcbar-bg); border-bottom: 1px solid var(--bar-line); font-size: 12px; }
+    .src-note { margin: 0; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--fg-4); }
+    .src-note strong { font-weight: 600; color: var(--accent); }
+    .src-link { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--fg-3); font-weight: 500; transition: color .15s; }
+    .src-link:hover { color: var(--fg); text-decoration: none; }
 
-    main { flex: 1; display: grid; place-items: center; padding: 48px 20px; }
-    .card { max-width: 600px; text-align: center; }
-    .card img { width: 64px; height: 64px; }
-    h1 { margin: 16px 0 8px; font-size: 28px; letter-spacing: -0.02em; }
-    p { margin: 0 0 12px; color: var(--mid); }
-    .soon { display: inline-block; margin-top: 8px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px;
-            background: var(--surface); color: var(--accent); font: 12px/1.6 "JetBrains Mono", ui-monospace, monospace; }
+    .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; height: var(--topbar-h); background: var(--bar); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--bar-line); }
+    .topbar .wrap { height: 100%; display: flex; align-items: center; gap: 14px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; letter-spacing: -.01em; color: var(--fg); }
+    .brand:hover { color: var(--fg); text-decoration: none; }
+    .brand img { width: 24px; height: 24px; flex: none; }
+    .nav { display: none; align-items: center; gap: 2px; margin-left: 14px; }
+    .nav a { padding: 6px 11px; font-size: 13.5px; color: var(--fg-3); border-radius: var(--r-sm); transition: color .2s; }
+    .nav a:hover { color: var(--fg); text-decoration: none; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .menu-btn { display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; border: 1px solid var(--line-2); border-radius: var(--r-md); background: transparent; color: var(--fg-2); cursor: pointer; }
+    .mobile-nav { display: none; border-bottom: 1px solid var(--line); background: var(--menu-bg); }
+    .mobile-nav.open { display: block; }
+    .mobile-nav a { display: block; padding: 12px 20px; font-size: 15px; color: var(--fg-2); border-top: 1px solid var(--rule); }
+    @media (min-width: 760px) { .nav { display: flex; } .menu-btn { display: none; } }
+
+    .theme-sw { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 12px; background: var(--switch-bg); flex: none; }
+    .theme-sw button { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 24px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: var(--fg-4); cursor: pointer; transition: color .15s, background-color .15s; }
+    .theme-sw button:hover { color: var(--fg); }
+    .theme-sw button[aria-pressed="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .05); }
+    .theme-sw svg { width: 13px; height: 13px; }
+
+    .glow { position: absolute; inset: 0 0 auto 0; height: 560px; pointer-events: none; z-index: 0; background: radial-gradient(640px 360px at 70% 8%, var(--glow), transparent 70%); mask-image: linear-gradient(#000 60%, transparent); }
+    .hero { padding-block: 48px 24px; }
+    h1 { margin: 14px 0 0; font-size: clamp(30px, 4.2vw, 46px); line-height: 1.06; letter-spacing: -.035em; font-weight: 700; text-wrap: balance; }
+    h1 em { font-style: normal; color: var(--accent); }
+    .lede { margin: 16px 0 0; max-width: 62ch; font-size: 16px; color: var(--fg-3); }
+
+    .banner { margin-top: 26px; padding: 18px 20px; border: 1px solid var(--line); border-left: 4px solid var(--sev, var(--accent)); border-radius: var(--r-lg); background: var(--surface-2); }
+    .banner p { margin: 0; }
+    .banner-line { margin-top: 8px !important; font-size: 18px; font-weight: 600; }
+    .banner-title { margin-top: 6px !important; color: var(--fg-2); }
+    .banner-critical { --sev: var(--critical); } .banner-high { --sev: var(--high); } .banner-medium { --sev: var(--medium); }
+    .banner-low { --sev: var(--low); } .banner-info, .banner-none { --sev: var(--info); }
+
+    .sev { display: inline-block; min-width: 72px; padding: 2px 8px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 5px; background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c); font: 600 11px/1.6 var(--mono); letter-spacing: .06em; text-align: center; }
+    .sev-critical { --c: var(--critical); } .sev-high { --c: var(--high); } .sev-medium { --c: var(--medium); } .sev-low { --c: var(--low); } .sev-info { --c: var(--info); }
+
+    .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: var(--r-md); font: 600 14px var(--sans); border: 1px solid transparent; cursor: pointer; transition: transform .2s var(--ease), background .2s, border-color .2s; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--accent-ink); }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost { border-color: var(--line-2); color: var(--fg-2); background: var(--field); }
+    .btn-ghost:hover { border-color: var(--line-hover); background: var(--hover-bg); color: var(--fg); }
+    .btn-sm { height: 32px; padding: 0 12px; font-size: 13px; white-space: nowrap; }
+    .btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+    #file { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    #load-status { margin: 10px 0 0; min-height: 1.6em; color: var(--fg-3); font-size: 14px; overflow-wrap: anywhere; }
+    #source { margin: 6px 0 0; color: var(--fg-4); font-size: 13px; }
+
+    section { scroll-margin-top: 72px; padding-block: 40px; border-top: 1px solid var(--rule); }
+    h2 { margin: 8px 0 0; font-size: 24px; letter-spacing: -.025em; font-weight: 650; }
+    .sub { margin: 6px 0 18px; max-width: 66ch; color: var(--fg-3); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg-4); padding: 8px 10px; border-bottom: 1px solid var(--line-2); }
+    td { vertical-align: top; padding: 12px 10px; border-bottom: 1px solid var(--rule); }
+    tbody tr:hover { background: var(--hover-bg); }
+    .f-title { margin: 0; color: var(--fg); }
+    details { margin-top: 6px; color: var(--fg-3); }
+    summary { cursor: pointer; font-size: 13px; color: var(--fg-3); }
+    .evidence { margin: 6px 0 0; font-size: 13px; }
+    pre { margin: 8px 0 0; padding: 12px; max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--field); color: var(--fg-2); font: 12px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: 14px; }
+    .card { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+    .card:target { border-color: var(--accent); }
+    .card h3 { margin: 0; font-size: 17px; letter-spacing: -.015em; font-weight: 600; }
+    .meta { margin: 4px 0 0; color: var(--fg-3); font-size: 13px; overflow-wrap: anywhere; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; font-size: 13px; }
+    .scroll { overflow-x: auto; }
+    .card table { font-size: 13px; }
+    .card td { padding: 8px; }
+    .verdict { font: 500 12px var(--mono); white-space: nowrap; }
+    .v-called-unused { color: var(--high); } .v-not-judged { color: var(--fg-3); } .v-no-finding { color: var(--fg-4); }
+
+    footer { border-top: 1px solid var(--rule); padding-block: 28px 40px; font-size: 13px; color: var(--fg-4); }
+    footer .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    footer a { color: var(--fg-4); } footer a:hover { color: var(--fg); }
+
+    @media (max-width: 600px) {
+      input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select, textarea { font-size: 16px; }
+      .theme-sw button { width: 36px; height: 32px; }
+      .menu-btn { width: 40px; height: 40px; }
+      .btn-sm { height: 36px; }
+      /* The findings table stacks into cards on a phone. */
+      #findings table, #findings tbody, #findings tr, #findings td { display: block; width: 100%; }
+      #findings thead { display: none; }
+      #findings tr { padding: 10px 0; border-bottom: 1px solid var(--line-2); }
+      #findings td { padding: 4px 0; border: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <div class="src-bar">
   <p class="src-note"><strong>Demo</strong> &middot; runs in your browser, nothing you load leaves the page.</p>
@@ -40,15 +182,87 @@
   </a>
 </div>
 
-<main>
-  <div class="card">
-    <img src="favicon.svg" alt="Scope Drift Trimmer icon: a pair of scissors">
-    <h1>Granted vs. used, for every bot and service account</h1>
-    <p>Scope Drift Trimmer reads the grants your non-human identities hold on Entra ID and AWS IAM, puts each one next to the platform's own record of whether it was used, and says how good that record is. Where a grant went unused, it drafts the change that removes it. You review the draft and run it yourself.</p>
-    <p>This page will load a sample estate with one ownerless mail app nobody has signed into, flag it before you click anything, and let you open your own export in the browser.</p>
-    <span class="soon">coming soon</span>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#main"><img src="favicon.svg" alt="" />Scope Drift Trimmer</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#findings-section">Findings</a><a href="#identities-section">Identities</a><a href="#about">How it grades</a>
+    </nav>
+    <div class="topbar-right">
+      <div class="theme-sw" id="themeSw" role="group" aria-label="Theme">
+        <button type="button" data-theme="light" aria-pressed="false" aria-label="Light theme" title="Light theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+        <button type="button" data-theme="dark" aria-pressed="true" aria-label="Dark theme" title="Dark theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></button>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+    </div>
   </div>
+  <nav class="mobile-nav" id="mobileNav" aria-label="Sections">
+    <a href="#findings-section">Findings</a><a href="#identities-section">Identities</a><a href="#about">How it grades</a>
+  </nav>
+</header>
+
+<div class="glow" aria-hidden="true"></div>
+
+<main class="wrap" id="main">
+  <div class="hero">
+    <p class="eyebrow"><b>ai-automation-tools</b> · access review for non-human identities</p>
+    <h1>Granted vs. <em>used</em>, for every bot and service account</h1>
+    <p class="lede">This page runs the <span class="mono">sdt</span> engine on a fictional estate: 8 identities, 16 grants across Entra ID, AWS, GitHub, Okta and Slack. Each grant sits next to the platform's own record of its use, and nothing is called unused unless that record exists. Every fix is a draft you review and run yourself.</p>
+    <div id="banner" class="banner" role="status" aria-live="polite"></div>
+    <div class="tools">
+      <label class="btn btn-primary" for="file">Load your own file<input id="file" type="file" accept=".json,application/json" /></label>
+      <button class="btn btn-ghost" id="download" type="button">Download inventory</button>
+      <button class="btn btn-ghost" id="reset" type="button">Back to the sample</button>
+    </div>
+    <p id="load-status" role="status" aria-live="polite"></p>
+    <p id="source"></p>
+  </div>
+
+  <section id="findings-section" aria-labelledby="findings-h">
+    <p class="eyebrow">Findings</p>
+    <h2 id="findings-h">Most severe first</h2>
+    <p class="sub">Severity is written out, not just coloured. Open a row's evidence to see the data, the window and the source file it rests on.</p>
+    <div id="findings" class="scroll"></div>
+  </section>
+
+  <section id="identities-section" aria-labelledby="identities-h">
+    <p class="eyebrow">Identities</p>
+    <h2 id="identities-h">Every grant, passing ones too</h2>
+    <p class="sub"><span class="mono">usageKnown: true</span> means the platform records whether this grant (or the identity) was used over the window. <span class="mono">usageKnown: false</span> grants are never judged used or unused.</p>
+    <div id="identities" class="grid"></div>
+  </section>
+
+  <section id="about" aria-labelledby="about-h">
+    <p class="eyebrow">How it grades</p>
+    <h2 id="about-h">Evidence first</h2>
+    <p class="sub">Four rules: <span class="mono">dormant-privileged-identity</span>, <span class="mono">unused-grant</span>, <span class="mono">narrower-permission-available</span> and <span class="mono">usage-not-observable</span>. AWS <span class="mono">iam:PassRole</span>, data-plane actions and GitHub App permissions leave no per-grant usage record, so they only ever appear as "not observable". Your own file is read with the browser's file API and analyzed on this page; it is never uploaded. The command-line tool runs the same code: <span class="mono">sdt analyze inventory.json --out out.json</span>.</p>
+  </section>
 </main>
 
+<footer>
+  <div class="wrap row">
+    <span>Sample data is fictional: example.com owners, AWS documentation account 123456789012, made-up tenant and app ids.</span>
+    <a href="https://ai-automation-tools.dev">ai-automation-tools.dev</a>
+  </div>
+</footer>
+
+<script>
+  // Theme switch. THEME_DEFAULT must equal the pre-paint default in <head>.
+  const THEME_KEY = 'scope-drift-trimmer.theme', THEME_DEFAULT = 'dark';
+  const themeBtns = document.querySelectorAll('#themeSw button');
+  function setTheme(t) {
+    const r = document.documentElement; r.classList.remove('light', 'dark'); r.classList.add(t);
+    themeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.theme === t)));
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#fafafa' : '#060606');
+  }
+  setTheme(document.documentElement.classList.contains('light') ? 'light' : THEME_DEFAULT);
+  themeBtns.forEach(b => b.addEventListener('click', () => { setTheme(b.dataset.theme); try { localStorage.setItem(THEME_KEY, b.dataset.theme); } catch (e) {} }));
+  const menuBtn = document.getElementById('menuBtn'), sheet = document.getElementById('mobileNav');
+  menuBtn.addEventListener('click', () => { const open = sheet.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', String(open)); });
+  sheet.addEventListener('click', e => { if (e.target.closest('a')) { sheet.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); } });
+</script>
+<script type="module" src="site/app.js"></script>
 </body>
 </html>

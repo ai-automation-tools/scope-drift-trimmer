@@ -35,7 +35,8 @@
 
 > [!WARNING]
 > **Early.** `sdt analyze` reads an agent inventory document and runs all four rules with
-> draft fixes. The AWS and Entra importers and the demo are still to come, one roadmap item at
+> draft fixes, and the demo page in `site/` runs the same engine in a browser (it goes live
+> with the Pages workflow). The AWS and Entra importers are still to come, one roadmap item at
 > a time. The [roadmap](docs/ROADMAP.md) says what's next.
 
 ## 🎯 What it's for
@@ -55,9 +56,12 @@ Scope Drift Trimmer is planned to:
 | **Flag** | Dormant privileged identities (worst when nobody owns them), unused write grants, permissions with a narrower alternative, and grants whose use can't be observed at all. |
 | **Draft** | A platform-shaped change per finding: a Graph `DELETE`, an AWS policy diff, a GitHub permission downgrade, an Okta scope revoke. Each starts with `DRAFT.` and goes nowhere until you run it. |
 
-The demo will load a fictional estate and flag `legacy-invoice-sync`, an app with no owner that
-holds `Mail.ReadWrite` and `Mail.Send` and hasn't signed in for months, before you click
-anything.
+The demo loads a fictional estate (8 identities, 16 grants) and flags `legacy-invoice-sync`, an
+app with no owner that holds `Mail.ReadWrite` and `Mail.Send` and hasn't signed in for months,
+before you click anything. It lists every grant with its `usageKnown` label, copies drafts,
+analyzes a file you load (in the browser, never uploaded) and downloads the result as a
+schema-valid inventory. To run it locally, `npm run build` and serve `_site/` with any static
+file server; it uses JavaScript modules, so opening the file directly won't work.
 
 ### What it won't do
 
@@ -124,17 +128,17 @@ this. Validate against the target environment first.`
 | Folder | What's inside |
 |:---|:---|
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the spec and build plan, and ADR-001. |
-| [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules and the draft templates. One TypeScript core that the browser demo will import too. |
+| [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules and the draft templates. One TypeScript core that the browser demo imports too. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite's agent inventory schema v0.1, vendored. Every read and write is validated against it. |
 | [**🧪 tests/**](tests/) | `node:test` suites, run with `npm test`. |
-| [**🖥️ site/**](site/) | The demo page and its favicon. A "coming soon" shell for now. |
+| [**🖥️ site/**](site/) | The demo page: `index.html`, the fictional `sample.inventory.json`, and `demo.ts`/`app.ts`, which import the engine from `src/`. `npm run build` writes it to `_site/`. |
 
 ## 🛠️ Development
 
 ```bash
 npm run lint    # ESLint plus tsc --noEmit
 npm test        # node --test
-npm run build   # tsc to dist/
+npm run build   # tsc to dist/, and the demo to _site/
 ```
 
 Agents working this repo read [AGENTS.md](AGENTS.md) first. Security reports go through

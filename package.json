@@ -15,7 +15,7 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.site.json && node scripts/build-site.ts",
     "test": "node --test",
     "lint": "eslint . && tsc --noEmit"
   },
