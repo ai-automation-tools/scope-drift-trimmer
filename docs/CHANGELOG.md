@@ -16,6 +16,7 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 ## Unreleased
 
 **Added**
+- Demo page in `site/`, built to `_site/` by `npm run build`: it imports the engine and rules from `src/` (no copy), runs them on a fictional 16-grant estate, and names `legacy-invoice-sync` and its `critical` finding on load. Findings sort by severity with the severity written out, each with its evidence and a copy-draft button; every identity lists every grant with its `usageKnown` label and verdict; a visitor's own inventory is analyzed in the browser; "Download inventory" saves a schema-valid v0.1 document. House style with a Light | Dark switch, checked at 390px. `tests/demo.test.ts` runs the page's analysis with `fetch` and `XMLHttpRequest` stubbed to fail. *Slice 2: Demo with the planted problem*
 - `sdt analyze <inventory.json> [--out <file>] [--fail-on <severity>]`: reads an agent inventory, validates it against the vendored schema v0.1 (`schemas/agent-inventory.schema.json`), runs `dormant-privileged-identity`, `unused-grant`, `narrower-permission-available` and `usage-not-observable`, and writes the document back with its findings and Entra, AWS, GitHub and Okta draft remediations. Invalid input exits 2 with the schema path of the first error and writes nothing; other producers' identities, findings and `x` data pass through unchanged. The `Adapter` interface ships with the inventory-passthrough adapter and its contract test, and a test runs the CLI with outbound sockets blocked. *Slice 1: Engine and rules*
 
 **Docs**

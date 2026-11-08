@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/now-slice_2:_demo-F59E0B?style=for-the-badge" alt="Now: Slice 2, demo">
+  <img src="https://img.shields.io/badge/now-slice_3:_import-F59E0B?style=for-the-badge" alt="Now: Slice 3, import">
   <img src="https://img.shields.io/badge/stage-incubating-2ea44f?style=for-the-badge" alt="Stage: incubating">
   <a href="README.md"><img src="https://img.shields.io/badge/↩-docs_home-6B7280?style=for-the-badge" alt="Back to docs"></a>
 </p>
@@ -39,7 +39,7 @@ this repo owns; no item needs a real tenant, a credential or network access.
 
 ## 🖥️ Slice 2: Demo with the planted problem
 
-- [ ] **Static demo page on the same engine** (MVP feature 2). `site/` gets the demo in the org house style (the `web-house-style` skill), importing the engine and rules from the build, no copy of the rule code. The fictional sample inventory holds the 16 grants from the idea prototype in schema v0.1, with `legacy-invoice-sync` (ownerless, never signed in, `Mail.ReadWrite` and `Mail.Send`) and `log-shipper-lambda`'s `iam:PassRole`. On first load, with no click, a banner names `legacy-invoice-sync` and its `critical` finding; findings sort by severity; an identity view lists every grant, passing ones too, with its `usageKnown` label; a copy-draft button; "load your own file" parsed in the browser; "Download inventory" saves a schema-valid document. Severity is shown in text as well as colour and the findings table works from the keyboard. A test loads the page script with `fetch` and `XMLHttpRequest` stubbed to fail and proves analysis still works. `npm run build` writes the page to `_site/`, and it reads on a phone.
+- [x] **Static demo page on the same engine** (MVP feature 2). `site/` gets the demo in the org house style (the `web-house-style` skill), importing the engine and rules from the build, no copy of the rule code. The fictional sample inventory holds the 16 grants from the idea prototype in schema v0.1, with `legacy-invoice-sync` (ownerless, never signed in, `Mail.ReadWrite` and `Mail.Send`) and `log-shipper-lambda`'s `iam:PassRole`. On first load, with no click, a banner names `legacy-invoice-sync` and its `critical` finding; findings sort by severity; an identity view lists every grant, passing ones too, with its `usageKnown` label; a copy-draft button; "load your own file" parsed in the browser; "Download inventory" saves a schema-valid document. Severity is shown in text as well as colour and the findings table works from the keyboard. A test loads the page script with `fetch` and `XMLHttpRequest` stubbed to fail and proves analysis still works. `npm run build` writes the page to `_site/`, and it reads on a phone. — done 2026-11-07: `site/demo.ts` (view model over `src/engine.ts`), `site/app.ts` (DOM, textContent only), `site/index.html` (house style, tan accent, Light | Dark switch) and the fictional `site/sample.inventory.json` (8 identities, 16 grants; the idea prototype wasn't in the workspace, so the grants extend the Slice 1 estate fixture); `npm run build` compiles them with the engine to `_site/` via `tsconfig.site.json` and `scripts/build-site.ts`; `tests/demo.test.ts` (9 tests) runs the analysis with `fetch`, `XMLHttpRequest`, `WebSocket` and `EventSource` stubbed to fail; rendered in headless Edge at 1400px and in a 390px frame with no sideways scroll
 
 ## 📥 Slice 3: AWS and Entra import
 
