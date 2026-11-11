@@ -1,0 +1,22 @@
+{
+    "JobStatus": "COMPLETED",
+    "JobType": "ACTION_LEVEL",
+    "JobCreationDate": "2026-11-04T07:01:00+00:00",
+    "ServicesLastAccessed": [
+        {
+            "ServiceName": "AWS Backup",
+            "LastAuthenticated": "2026-03-02T00:00:00+00:00",
+            "ServiceNamespace": "backup",
+            "LastAuthenticatedEntity": "arn:aws:iam::123456789012:role/old-backup-role",
+            "LastAuthenticatedRegion": "us-east-1",
+            "TotalAuthenticatedEntities": 1,
+            "TrackedActionsLastAccessed": [
+                { "ActionName": "DeleteBackupVault" },
+                { "ActionName": "ListBackupVaults", "LastAccessedEntity": "arn:aws:iam::123456789012:role/old-backup-role", "LastAccessedTime": "2026-03-02T00:00:00+00:00", "LastAccessedRegion": "us-east-1" }
+            ]
+        }
+    ],
+    "JobCompletionDate": "2026-11-04T07:01:03+00:00",
+    "IsTruncated": false,
+    "Arn": "arn:aws:iam::123456789012:role/old-backup-role"
+}

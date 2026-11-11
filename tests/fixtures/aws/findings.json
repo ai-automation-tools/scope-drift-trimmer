@@ -1,0 +1,99 @@
+[
+    {
+        "analyzedAt": "2026-11-04T06:00:00+00:00",
+        "createdAt": "2026-09-01T06:00:00+00:00",
+        "findingDetails": [
+            {
+                "unusedPermissionDetails": {
+                    "serviceNamespace": "iam",
+                    "actions": [
+                        { "action": "CreateUser" },
+                        { "action": "AttachRolePolicy", "lastAccessed": "2026-05-01T10:00:00+00:00" },
+                        { "action": "PassRole" }
+                    ],
+                    "lastAccessed": "2026-05-01T10:00:00+00:00"
+                }
+            },
+            {
+                "unusedPermissionDetails": {
+                    "serviceNamespace": "s3",
+                    "lastAccessed": "2026-04-01T10:00:00+00:00"
+                }
+            }
+        ],
+        "findingType": "UnusedPermission",
+        "id": "11111111-aaaa-4bbb-8ccc-000000000001",
+        "resource": "arn:aws:iam::123456789012:role/ci-deploy",
+        "resourceOwnerAccount": "123456789012",
+        "resourceType": "AWS::IAM::Role",
+        "status": "ACTIVE",
+        "updatedAt": "2026-11-04T06:00:00+00:00"
+    },
+    {
+        "analyzedAt": "2026-11-04T06:00:00+00:00",
+        "createdAt": "2026-06-01T06:00:00+00:00",
+        "findingDetails": [
+            { "unusedIamRoleDetails": { "lastAccessed": "2026-03-02T00:00:00+00:00" } }
+        ],
+        "findingType": "UnusedIAMRole",
+        "id": "11111111-aaaa-4bbb-8ccc-000000000002",
+        "resource": "arn:aws:iam::123456789012:role/old-backup-role",
+        "resourceOwnerAccount": "123456789012",
+        "resourceType": "AWS::IAM::Role",
+        "status": "ACTIVE",
+        "updatedAt": "2026-11-04T06:00:00+00:00"
+    },
+    {
+        "analyzedAt": "2026-11-04T06:00:00+00:00",
+        "createdAt": "2026-10-01T06:00:00+00:00",
+        "findingDetails": [
+            {
+                "unusedPermissionDetails": {
+                    "serviceNamespace": "athena",
+                    "actions": [ { "action": "StartQueryExecution" } ]
+                }
+            },
+            {
+                "unusedPermissionDetails": {
+                    "serviceNamespace": "s3",
+                    "actions": [ { "action": "PutObject" } ]
+                }
+            }
+        ],
+        "findingType": "UnusedPermission",
+        "id": "11111111-aaaa-4bbb-8ccc-000000000003",
+        "resource": "arn:aws:iam::123456789012:role/reports-reader",
+        "resourceOwnerAccount": "123456789012",
+        "resourceType": "AWS::IAM::Role",
+        "status": "ACTIVE",
+        "updatedAt": "2026-11-04T06:00:00+00:00"
+    },
+    {
+        "analyzedAt": "2026-11-04T06:00:00+00:00",
+        "createdAt": "2026-07-01T06:00:00+00:00",
+        "findingDetails": [
+            { "unusedIamUserAccessKeyDetails": { "accessKeyId": "example-key-id", "lastAccessed": "2026-01-01T00:00:00+00:00" } }
+        ],
+        "findingType": "UnusedIAMUserAccessKey",
+        "id": "11111111-aaaa-4bbb-8ccc-000000000004",
+        "resource": "arn:aws:iam::123456789012:user/build-user",
+        "resourceOwnerAccount": "123456789012",
+        "resourceType": "AWS::IAM::User",
+        "status": "ACTIVE",
+        "updatedAt": "2026-11-04T06:00:00+00:00"
+    },
+    {
+        "analyzedAt": "2026-11-04T06:00:00+00:00",
+        "createdAt": "2026-02-01T06:00:00+00:00",
+        "findingDetails": [
+            { "unusedIamRoleDetails": {} }
+        ],
+        "findingType": "UnusedIAMRole",
+        "id": "11111111-aaaa-4bbb-8ccc-000000000005",
+        "resource": "arn:aws:iam::123456789012:role/archived-role",
+        "resourceOwnerAccount": "123456789012",
+        "resourceType": "AWS::IAM::Role",
+        "status": "ARCHIVED",
+        "updatedAt": "2026-11-04T06:00:00+00:00"
+    }
+]

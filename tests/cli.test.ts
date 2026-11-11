@@ -29,6 +29,16 @@ test("sdt analyze writes a schema-valid inventory and a summary, with outbound s
   assert.equal(validateInventory(JSON.parse(readFileSync(out, "utf8"))), null);
 });
 
+test("sdt analyze reads export files and folders, with outbound sockets blocked", () => {
+  const out = join(dir, "imported.json");
+  const r = sdt("analyze", fileURLToPath(fixturePath("entra/")), fileURLToPath(fixturePath("aws/findings.json")), fileURLToPath(fixturePath("aws/analyzer.json")), "--out", out);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /CRITICAL {2}legacy-invoice-sync: Dormant privileged identity with no owner/);
+  assert.match(r.stdout, /HIGH {6}reports-reader: Unused grant/);
+  assert.equal(validateInventory(JSON.parse(readFileSync(out, "utf8"))), null);
+  assert.equal(sdt("analyze", fileURLToPath(fixturePath("aws/findings.json"))).status, 2, "findings without the analyzer");
+});
+
 test("--fail-on sets the exit code", () => {
   const input = fileURLToPath(fixturePath("estate.inventory.json"));
   assert.equal(sdt("analyze", input, "--fail-on", "critical").status, 1);

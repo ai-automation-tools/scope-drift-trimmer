@@ -1,6 +1,7 @@
 // The engine: inventory in, inventory with scope-drift-trimmer findings out. No Node
 // built-ins here; the browser demo imports this module as-is (ADR-001).
-import { InventoryError, parseInventory } from "./inventory.ts";
+import { exportAdapterFor, importExports } from "./import.ts";
+import { InventoryError, parseInventory, type SdtExtensions } from "./inventory.ts";
 import { runRules, type RuleFinding } from "./rules.ts";
 import { formatSchemaError, validateInventory } from "./schema.ts";
 import type { Finding, InputFile, Inventory, Severity } from "./types.ts";
@@ -18,10 +19,22 @@ export interface Analysis {
   summary: string;
 }
 
-/** Analyzes one inventory file. Throws InventoryError on an invalid input or output. */
-export function analyze(file: InputFile, opts: { now?: Date } = {}): Analysis {
+/**
+ * Analyzes one inventory file, or a set of AWS and Entra export files (imported first, with
+ * `now` as the window's end). Throws InventoryError on an invalid input or output.
+ */
+export function analyze(input: InputFile | InputFile[], opts: { now?: Date } = {}): Analysis {
+  const files = Array.isArray(input) ? input : [input];
+  if (files.length === 0) throw new InventoryError("no input files");
+  const now = opts.now ?? new Date();
+  const file = files.length === 1 && !exportAdapterFor(files[0]) ? files[0] : importExports(files, now);
+  return analyzeInventory(file, now);
+}
+
+function analyzeInventory(file: InputFile, now: Date): Analysis {
   const input = parseInventory(file);
-  const ctx = { asOf: Date.parse(input.generatedAt), source: file.name };
+  const ext = (input.x?.[PRODUCER] ?? {}) as SdtExtensions;
+  const ctx = { asOf: Date.parse(input.generatedAt), source: file.name, sources: ext.sources, awsRecommendations: ext.awsRecommendations };
   const previous = new Map(
     (input.findings ?? []).filter((f) => f.ruleId.startsWith(`${PRODUCER}/`)).map((f) => [f.id, f]),
   );
@@ -33,7 +46,7 @@ export function analyze(file: InputFile, opts: { now?: Date } = {}): Analysis {
 
   const document: Inventory = {
     ...input,
-    generatedAt: (opts.now ?? new Date()).toISOString(),
+    generatedAt: now.toISOString(),
     producer: { name: PRODUCER, version: VERSION },
     identities: input.identities,
     findings: [

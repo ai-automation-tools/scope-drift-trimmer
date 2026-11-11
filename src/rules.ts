@@ -1,6 +1,7 @@
 // The four rules. A grant is judged used or unused only when the platform records its use
 // (usageKnown: true) over a stated window; silence is never read as "unused".
 import { clean, draftNarrowing, draftRemoval } from "./remediation.ts";
+import type { AwsRecommendation } from "./inventory.ts";
 import type { Finding, Grant, Identity } from "./types.ts";
 
 const DAY = 86_400_000;
@@ -11,6 +12,10 @@ export interface RuleContext {
   asOf: number;
   /** The input file's name, for evidence. */
   source: string;
+  /** The export files each identity was imported from, when it was (x["scope-drift-trimmer"]). */
+  sources?: Record<string, string[]>;
+  /** IAM Access Analyzer's recommended policy steps, per identity id. */
+  awsRecommendations?: Record<string, AwsRecommendation[]>;
 }
 
 /** A finding plus the grant ids it calls unused, kept for the no-false-unused check. */
@@ -46,10 +51,39 @@ const judgeable = (identity: Identity, g: Grant): g is Grant & { observationDays
   g.observationDays !== undefined &&
   !(identity.platform === "aws" && g.permission.includes("*"));
 
-const hasOwner = (identity: Identity) => {
+/** "none" only when the source records no owner; "unknown" when it doesn't carry owners. */
+const ownership = (identity: Identity) => {
   const o = identity.owner;
-  return o != null && Boolean(o.name || o.email || o.team);
+  if (o === undefined) return "unknown";
+  return o !== null && Boolean(o.name || o.email || o.team) ? "owned" : "none";
 };
+
+/** The file names the identity's data came from. Hostile x data falls back to the input file. */
+const sourceOf = (identity: Identity, ctx: RuleContext) => {
+  const s = ctx.sources && Object.hasOwn(ctx.sources, identity.id) ? ctx.sources[identity.id] : undefined;
+  return clean(Array.isArray(s) && s.length ? `${s.join(", ")} (imported)` : ctx.source);
+};
+
+const recommendations = (identity: Identity, ctx: RuleContext) => {
+  const r = ctx.awsRecommendations && Object.hasOwn(ctx.awsRecommendations, identity.id) ? ctx.awsRecommendations[identity.id] : undefined;
+  return Array.isArray(r) ? r : undefined;
+};
+
+/** Why a write/admin grant's use can't be judged, in the platform's terms. */
+function whyNotJudged(identity: Identity, g: Grant): string {
+  if (identity.platform === "aws" && g.permission.includes("*")) return "an AWS wildcard, which last-accessed data can't narrow";
+  if (g.usageKnown === true) return "no observation window stated";
+  if (identity.platform === "azure-entra") {
+    return identity.lastUsedAt
+      ? `Entra records sign-ins per app, not per permission, and this app last signed in ${clean(identity.lastUsedAt)}`
+      : "the export holds no sign-in activity record for this app";
+  }
+  if (identity.platform === "aws") {
+    return g.permission === "iam:PassRole" ? "IAM records no use of iam:PassRole" : "IAM last-accessed data leaves out data-plane actions like this one";
+  }
+  if (identity.platform === "github") return "GitHub records no per-permission use for App permissions";
+  return "the platform records no use of it";
+}
 
 const finding = (rule: string, identity: Identity, suffix: string, f: Omit<RuleFinding, "id" | "identityId" | "ruleId" | "status">): RuleFinding => ({
   id: `${RULE}${rule}:${identity.id}${suffix}`,
@@ -62,26 +96,28 @@ const finding = (rule: string, identity: Identity, suffix: string, f: Omit<RuleF
 function dormantPrivilegedIdentity(identity: Identity, ctx: RuleContext): RuleFinding | null {
   const grants = identity.grants ?? [];
   const known = grants.filter((g) => judgeable(identity, g));
-  if (known.length === 0) return null; // identity-level use isn't recorded: not judged
+  // Identity-level use must be on record (lastUsedAt present, null meaning none); an import can
+  // list only some of an identity's grants, so unused grants alone don't make it dormant.
+  if (known.length === 0 || identity.lastUsedAt === undefined) return null;
   const days = Math.min(...known.map((g) => g.observationDays));
   const since = ctx.asOf - days * DAY;
   if (usedSince(identity.lastUsedAt, since) || grants.some((g) => usedSince(g.lastUsedAt, since))) return null;
   const unused = known.filter(isPrivileged);
   if (unused.length === 0) return null;
   const notJudged = grants.filter((g) => isPrivileged(g) && !judgeable(identity, g));
-  const owned = hasOwner(identity);
+  const owner = ownership(identity);
   return finding("dormant-privileged-identity", identity, "", {
-    severity: owned ? "high" : "critical",
-    title: `Dormant privileged identity${owned ? "" : " with no owner"}: ${clean(identity.displayName)} has not been used in ${days} days and holds ${names(unused)}`,
+    severity: owner === "none" ? "critical" : "high",
+    title: `Dormant privileged identity${owner === "none" ? " with no owner" : ""}: ${clean(identity.displayName)} has not been used in ${days} days and holds ${names(unused)}`,
     evidence: [
-      `Source: ${clean(ctx.source)}.`,
+      `Source: ${sourceOf(identity, ctx)}.`,
       `Window: ${days} days, ${day(since)} to ${day(ctx.asOf)} (shortest observationDays of the identity's usage-recorded grants).`,
       `Identity lastUsedAt: ${clean(identity.lastUsedAt ?? "none recorded")}; no grant was used inside the window.`,
       `Unused write/admin grants (usageKnown: true): ${names(unused)}.`,
       notJudged.length ? `Not judged, because the platform records no use for them: ${names(notJudged)}.` : "",
-      owned ? "" : "Owner: none recorded.",
+      owner === "none" ? "Owner: none recorded." : owner === "unknown" ? "Owner: not in the source data." : "",
     ].filter(Boolean).join(" "),
-    remediation: draftRemoval(identity, unused),
+    remediation: draftRemoval(identity, unused, recommendations(identity, ctx)),
     unusedGrantIds: unused.map((g) => g.id),
   });
 }
@@ -95,11 +131,11 @@ function unusedGrants(identity: Identity, ctx: RuleContext): RuleFinding[] {
         severity: g.access === "read" ? "medium" : "high",
         title: `Unused grant: ${clean(identity.displayName)} holds ${clean(g.permission)} on ${clean(g.resource)}, not used in ${g.observationDays} days`,
         evidence: [
-          `Source: ${clean(ctx.source)}.`,
+          `Source: ${sourceOf(identity, ctx)}.`,
           `Window: ${g.observationDays} days, ${day(ctx.asOf - g.observationDays * DAY)} to ${day(ctx.asOf)} (the grant's observationDays).`,
           `Grant ${clean(g.id)}, ${clean(g.permission)} (${g.access}) on ${clean(g.resource)}: usageKnown true, lastUsedAt ${clean(g.lastUsedAt ?? "none recorded")}.`,
         ].join(" "),
-        remediation: draftRemoval(identity, [g]),
+        remediation: draftRemoval(identity, [g], recommendations(identity, ctx)),
         unusedGrantIds: [g.id],
       }),
     );
@@ -116,7 +152,7 @@ function narrowerPermissionAvailable(identity: Identity, ctx: RuleContext): Rule
         severity: "medium",
         title: `Narrower permission available: ${clean(identity.displayName)} holds ${clean(g.permission)} (${g.access}) where ${entry.narrower} may be enough`,
         evidence: [
-          `Source: ${clean(ctx.source)}.`,
+          `Source: ${sourceOf(identity, ctx)}.`,
           `Data: narrower-permission table version ${NARROWER_PERMISSIONS.version}; ${entry.basis}.`,
           "Window: none; this rule reads the grant list, not usage.",
           `Usage of ${clean(g.permission)}: ${g.usageKnown === true ? "recorded by the platform but not used by this rule" : "unknown, the platform does not record it"}. This finding does not claim the grant is unused; check what the identity does before narrowing.`,
@@ -135,9 +171,8 @@ function usageNotObservable(identity: Identity, ctx: RuleContext): RuleFinding |
     severity: "info",
     title: `Use not observable: ${hidden.length} write/admin grant${hidden.length === 1 ? "" : "s"} on ${clean(identity.displayName)} could not be judged`,
     evidence: [
-      `Source: ${clean(ctx.source)}.`,
-      `Window: not applicable; the platform records no per-grant use for ${names(hidden)}`,
-      "(usageKnown false, no observation window, or an AWS wildcard that last-accessed data can't narrow).",
+      `Source: ${sourceOf(identity, ctx)}.`,
+      `Window: not applicable; there is no per-grant use on record for ${hidden.map((g) => `${clean(g.permission)} (${whyNotJudged(identity, g)})`).join("; ")}.`,
       "No rule judged these grants used or unused.",
     ].join(" "),
     unusedGrantIds: [],

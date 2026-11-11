@@ -1,0 +1,17 @@
+{
+    "completedAt": "2026-11-04T06:05:00+00:00",
+    "recommendationType": "UnusedPermissionRecommendation",
+    "recommendedSteps": [
+        {
+            "unusedPermissionsRecommendedStep": {
+                "existingPolicyId": "arn:aws:iam::123456789012:policy/ci-deploy-policy",
+                "policyUpdatedAt": "2026-01-15T12:00:00+00:00",
+                "recommendedAction": "CREATE_POLICY",
+                "recommendedPolicy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"cloudformation:UpdateStack\",\"ec2:DescribeInstances\"],\"Resource\":\"*\"}]}"
+            }
+        }
+    ],
+    "resourceArn": "arn:aws:iam::123456789012:role/ci-deploy",
+    "startedAt": "2026-11-04T06:04:00+00:00",
+    "status": "SUCCEEDED"
+}

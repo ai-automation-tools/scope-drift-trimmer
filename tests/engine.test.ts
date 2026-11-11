@@ -2,13 +2,20 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { analyze, failsAt } from "../src/engine.ts";
+import { awsAdapter } from "../src/aws.ts";
+import { entraAdapter } from "../src/entra.ts";
 import { inventoryAdapter, InventoryError, type Adapter } from "../src/inventory.ts";
 import { validateInventory } from "../src/schema.ts";
 import { VERSION } from "../src/version.ts";
 import { fixture } from "./helpers.ts";
 
-// The shared adapter contract. Slice 3's AWS and Entra adapters join this list.
-const ADAPTERS: [Adapter, string[]][] = [[inventoryAdapter, ["estate.inventory.json"]]];
+// The shared adapter contract: every adapter, on its committed fictional fixtures.
+const folder = (dir: string) => readdirSync(new URL(`./fixtures/${dir}/`, import.meta.url)).map((n) => `${dir}/${n}`);
+const ADAPTERS: [Adapter, string[]][] = [
+  [inventoryAdapter, ["estate.inventory.json"]],
+  [awsAdapter, folder("aws")],
+  [entraAdapter, folder("entra")],
+];
 
 for (const [adapter, files] of ADAPTERS) {
   test(`adapter contract: ${adapter.name}`, () => {
@@ -19,6 +26,7 @@ for (const [adapter, files] of ADAPTERS) {
     assert.ok(first.length > 0);
     assert.deepEqual(adapter.parse(files.map(fixture)).map((i) => i.id), first.map((i) => i.id), "stable ids");
     for (const i of first) assert.match(i.id, new RegExp(`^${i.platform}:.+`), "ids are <platform>:<native id>");
+    for (const f of input) assert.equal(adapter.accepts(JSON.parse(f.content)), true, `${adapter.name} reads ${f.name}`);
   });
 }
 

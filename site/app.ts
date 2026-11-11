@@ -99,23 +99,24 @@ function render(view: DemoView, source: string) {
   );
 }
 
-function load(file: InputFile) {
+function load(files: InputFile[]) {
   const status = $("load-status");
+  const name = files.map((f) => f.name).join(", ");
   try {
-    render(buildView(file), file.name);
-    status.textContent = file === SAMPLE ? "" : `Analyzed ${file.name} in your browser.`;
+    render(buildView(files), name);
+    status.textContent = files[0] === SAMPLE ? "" : `Analyzed ${name} in your browser.`;
   } catch (e) {
-    status.textContent = `Could not analyze ${file.name}: ${(e as Error).message}`;
+    status.textContent = `Could not analyze ${name}: ${(e as Error).message}`;
   }
 }
 
 $("file").addEventListener("change", async (e) => {
   const input = e.target as HTMLInputElement;
-  const f = input.files?.[0];
-  if (f) load({ name: f.name, content: await f.text() });
+  const files = await Promise.all([...(input.files ?? [])].map(async (f) => ({ name: f.name, content: await f.text() })));
+  if (files.length) load(files);
   input.value = "";
 });
-$("reset").addEventListener("click", () => load(SAMPLE));
+$("reset").addEventListener("click", () => load([SAMPLE]));
 $("download").addEventListener("click", () => {
   if (!current) return;
   const url = URL.createObjectURL(new Blob([downloadText(current)], { type: "application/json" }));
@@ -124,4 +125,4 @@ $("download").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
-load(SAMPLE);
+load([SAMPLE]);

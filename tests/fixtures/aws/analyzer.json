@@ -1,0 +1,15 @@
+{
+    "analyzer": {
+        "arn": "arn:aws:access-analyzer:us-east-1:123456789012:analyzer/unused-access-example",
+        "name": "unused-access-example",
+        "type": "ACCOUNT_UNUSED_ACCESS",
+        "createdAt": "2026-01-10T08:00:00+00:00",
+        "status": "ACTIVE",
+        "tags": {},
+        "configuration": {
+            "unusedAccess": {
+                "unusedAccessAge": 90
+            }
+        }
+    }
+}
