@@ -25,6 +25,7 @@
 
 | Section | What's inside |
 |:---|:---|
+| [**📏 rules.md**](rules.md) | The rule catalog: when each of the four rules fires, and what the AWS and Entra importers record as used, unused or unknown. |
 | [**📦 product/**](product/README.md) | The spec with its Won't list, and the build plan that marks Slices 0 to 3 as the MVP. |
 | [**⚖️ ADR-001**](decisions/adr-001-typescript-core-file-import.md) | Why one TypeScript core runs in both the CLI and the browser, and why the MVP imports exported files instead of calling platform APIs. |
 

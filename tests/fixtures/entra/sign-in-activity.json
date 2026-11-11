@@ -1,0 +1,26 @@
+{
+  "@odata.context": "https://graph.microsoft.com/beta/$metadata#reports/servicePrincipalSignInActivities",
+  "value": [
+    {
+      "id": "YzBmZmVlMDAtMTExMS00MjIyLTgzMzMtNDQ0NDU1NTU2NjY2",
+      "appId": "c0ffee00-1111-4222-8333-444455556666",
+      "applicationAuthenticationClientSignInActivity": { "lastSignInDateTime": null, "lastSignInRequestId": null },
+      "applicationAuthenticationResourceSignInActivity": { "lastSignInDateTime": null, "lastSignInRequestId": null },
+      "delegatedClientSignInActivity": { "lastSignInDateTime": null, "lastSignInRequestId": null },
+      "delegatedResourceSignInActivity": { "lastSignInDateTime": null, "lastSignInRequestId": null },
+      "lastSignInActivity": { "lastSignInDateTime": null, "lastSignInRequestId": null }
+    },
+    {
+      "id": "ZDFkMWQxZDEtMjIyMi00MzMzLTg0NDQtNTU1NTY2NjY3Nzc3",
+      "appId": "d1d1d1d1-2222-4333-8444-555566667777",
+      "applicationAuthenticationClientSignInActivity": { "lastSignInDateTime": "2026-10-30T12:00:00Z", "lastSignInRequestId": "cccc0003-0000-4000-8000-000000000001" },
+      "lastSignInActivity": { "lastSignInDateTime": "2026-10-30T12:00:00Z", "lastSignInRequestId": "cccc0003-0000-4000-8000-000000000001" }
+    },
+    {
+      "id": "ZTJlMmUyZTItMzMzMy00NDQ0LTg1NTUtNjY2Njc3Nzc4ODg4",
+      "appId": "e2e2e2e2-3333-4444-8555-666677778888",
+      "delegatedClientSignInActivity": { "lastSignInDateTime": "2026-01-15T09:00:00-8:00", "lastSignInRequestId": "cccc0003-0000-4000-8000-000000000002" },
+      "lastSignInActivity": { "lastSignInDateTime": "2026-01-15T17:00:00Z", "lastSignInRequestId": "cccc0003-0000-4000-8000-000000000002" }
+    }
+  ]
+}

@@ -34,10 +34,10 @@
 ---
 
 > [!WARNING]
-> **Early.** `sdt analyze` reads an agent inventory document and runs all four rules with
-> draft fixes, and the demo page in `site/` runs the same engine in a browser (it goes live
-> with the Pages workflow). The AWS and Entra importers are still to come, one roadmap item at
-> a time. The [roadmap](docs/ROADMAP.md) says what's next.
+> **Early.** `sdt analyze` reads an agent inventory document or AWS and Entra ID export files
+> and runs all four rules with draft fixes, and the demo page in `site/` runs the same engine
+> in a browser (it goes live with the Pages workflow). It isn't on npm yet. The
+> [roadmap](docs/ROADMAP.md) says what's left before release.
 
 ## 🎯 What it's for
 
@@ -47,7 +47,7 @@ called; Entra ID only knows whether an app signed in at all; GitHub knows almost
 permission. A list of "unused permissions" that ignores that difference will tell you to remove
 something that is in use.
 
-Scope Drift Trimmer is planned to:
+Scope Drift Trimmer works in four steps:
 
 | Step | What it does |
 |:---|:---|
@@ -59,7 +59,7 @@ Scope Drift Trimmer is planned to:
 The demo loads a fictional estate (8 identities, 16 grants) and flags `legacy-invoice-sync`, an
 app with no owner that holds `Mail.ReadWrite` and `Mail.Send` and hasn't signed in for months,
 before you click anything. It lists every grant with its `usageKnown` label, copies drafts,
-analyzes a file you load (in the browser, never uploaded) and downloads the result as a
+analyzes an inventory or a set of export files you load (in the browser, never uploaded) and downloads the result as a
 schema-valid inventory. To run it locally, `npm run build` and serve `_site/` with any static
 file server; it uses JavaScript modules, so opening the file directly won't work.
 
@@ -92,10 +92,31 @@ Findings: 1 critical, 3 high, 2 medium, 0 low, 4 info
   ...
 ```
 
+The same command reads export files. On the fictional Entra export in `tests/fixtures/entra/`
+(a folder stands for every `.json` file in it):
+
+```bash
+node dist/src/cli.js analyze tests/fixtures/entra
+```
+
+```text
+sdt 0.0.0: app-role-assignments.json, oauth2-permission-grants.json, service-principals.json, sign-in-activity.json, 4 identities, 7 grants, as of 2026-11-11T05:51:23.680Z
+Findings: 1 critical, 1 high, 0 medium, 0 low, 2 info
+  CRITICAL  legacy-invoice-sync: Dormant privileged identity with no owner: legacy-invoice-sync has not been used in 90 days and holds Mail.ReadWrite, Mail.Send
+  HIGH      reporting-dashboard: Dormant privileged identity: reporting-dashboard has not been used in 90 days and holds Files.ReadWrite.All
+  INFO      hr-directory-reader: Use not observable: 1 write/admin grant on hr-directory-reader could not be judged
+  INFO      orphan-webhook: Use not observable: 1 write/admin grant on orphan-webhook could not be judged
+```
+
+`hr-directory-reader` signed in on 2026-10-30, inside the window, and Entra records sign-ins per app, not per
+permission, so its `User.ReadWrite.All` is listed and not judged. `orphan-webhook` isn't in the
+sign-in report at all, which is not the same as never signing in.
+
 ### Usage
 
 ```text
 sdt analyze <inventory.json> [--out <file>] [--fail-on <severity>]
+sdt analyze <export files or folders...> [--out <file>] [--fail-on <severity>]
 sdt --version
 ```
 
@@ -104,16 +125,96 @@ sdt --version
 | `--out <file>` | Writes the inventory with this run's findings. Nothing is written when the input is invalid. |
 | `--fail-on <severity>` | Exits 1 when a finding is at or above `critical`, `high`, `medium`, `low` or `info`. For CI. |
 
-Exit codes: `0` ran clean, `1` the `--fail-on` threshold was reached, `2` bad usage or an
-input that isn't a valid [schema v0.1](schemas/agent-inventory.schema.json) inventory (the
-message names the first error's document path and schema path). Re-running on its own output
-replaces its earlier findings and keeps any status a reviewer set, such as `accepted-risk`.
+Until the npm release, `sdt` here means `node dist/src/cli.js` in a built clone.
+Pass either one inventory or any number of export files, not both. Exports are imported into
+a schema v0.1 inventory first, with the run's own time as the end of every window, so analyze
+an export the day you take it.
+
+Exit codes: `0` ran clean, `1` the `--fail-on` threshold was reached, `2` bad usage, an input
+that isn't a valid [schema v0.1](schemas/agent-inventory.schema.json) inventory (the message
+names the first error's document path and schema path), or an export file the tool can't read
+(the message names the file). Re-running on its own output replaces its earlier findings and
+keeps any status a reviewer set, such as `accepted-risk`.
+
+### Export from AWS
+
+Needs the AWS CLI v2, an IAM Access Analyzer **unused-access** analyzer (a paid feature, priced
+per role and user analyzed), and read access to Access Analyzer and IAM. In bash, AWS
+CloudShell or WSL:
+
+```bash
+ANALYZER_ARN=arn:aws:access-analyzer:us-east-1:123456789012:analyzer/your-unused-access-analyzer
+mkdir -p aws-export && cd aws-export
+aws accessanalyzer get-analyzer --analyzer-name "${ANALYZER_ARN##*/}" > analyzer.json
+
+# Unused-access findings for roles, and the analyzer's recommended policy for each
+IDS=$(aws accessanalyzer list-findings-v2 --analyzer-arn "$ANALYZER_ARN" \
+  --filter '{"status":{"eq":["ACTIVE"]},"resourceType":{"eq":["AWS::IAM::Role"]}}' \
+  --query 'findings[].id' --output text)
+for id in $IDS; do
+  aws accessanalyzer get-finding-v2 --analyzer-arn "$ANALYZER_ARN" --id "$id" > "finding-$id.json"
+  aws accessanalyzer generate-finding-recommendation --analyzer-arn "$ANALYZER_ARN" --id "$id" 2>/dev/null
+done
+sleep 30   # recommendations take a few seconds each; unfinished ones are skipped
+for id in $IDS; do
+  aws accessanalyzer get-finding-recommendation --analyzer-arn "$ANALYZER_ARN" --id "$id" \
+    > "recommendation-$id.json" 2>/dev/null || rm -f "recommendation-$id.json"
+done
+
+# Last-accessed details per role, at action level, with the role ARN added
+for arn in $(aws iam list-roles --query 'Roles[].Arn' --output text); do
+  job=$(aws iam generate-service-last-accessed-details --arn "$arn" --granularity ACTION_LEVEL --query JobId --output text)
+  while [ "$(aws iam get-service-last-accessed-details --job-id "$job" --query JobStatus --output text)" = IN_PROGRESS ]; do sleep 2; done
+  aws iam get-service-last-accessed-details --job-id "$job" --query "merge(@, {Arn: '$arn'})" > "last-accessed-${arn##*/}.json"
+done
+cd .. && sdt analyze aws-export --out inventory.json
+```
+
+The `--query "merge(@, {Arn: ...})"` adds the role ARN, which the last-accessed response only
+carries for services the role used. Only roles are imported; IAM users are skipped, because
+they can be people. The analyzer's `unusedAccessAge` is the window for every AWS grant.
+
+### Export from Entra ID
+
+Needs the `Microsoft.Graph.Authentication` PowerShell module, `Directory.Read.All` and
+`AuditLog.Read.All`, and a role such as Global Reader or Reports Reader. The sign-in report
+(`reports/servicePrincipalSignInActivities`) needs an **Entra ID P1 or P2** licence and is
+still in Graph beta (checked 2026-11-10). Without it every Entra grant is `usageKnown: false`
+and nothing is called unused. In PowerShell 7:
+
+```powershell
+Connect-MgGraph -Scopes Directory.Read.All, AuditLog.Read.All -NoWelcome
+New-Item -ItemType Directory -Force entra-export | Out-Null
+function Save-Graph([string]$Uri, [string]$Name) {
+  $n = 0
+  while ($Uri) {
+    $n++
+    $json = Invoke-MgGraphRequest -Method GET -Uri $Uri -OutputType Json
+    Set-Content -Path "entra-export/$Name-$n.json" -Value $json -Encoding utf8
+    $Uri = ($json | ConvertFrom-Json).'@odata.nextLink'
+  }
+}
+Save-Graph 'https://graph.microsoft.com/v1.0/servicePrincipals?$select=id,appId,displayName,appOwnerOrganizationId,servicePrincipalType,accountEnabled,appRoles,keyCredentials,passwordCredentials&$expand=owners' service-principals
+Save-Graph 'https://graph.microsoft.com/v1.0/oauth2PermissionGrants' oauth2-permission-grants
+Save-Graph 'https://graph.microsoft.com/beta/reports/servicePrincipalSignInActivities' sign-in-activity
+Get-ChildItem entra-export/service-principals-*.json |
+  ForEach-Object { (Get-Content $_ -Raw | ConvertFrom-Json).value } |
+  Where-Object appOwnerOrganizationId -ne 'f8cdef31-a31e-4b4a-93e4-5f571e91255a' |
+  ForEach-Object { Save-Graph "https://graph.microsoft.com/v1.0/servicePrincipals/$($_.id)/appRoleAssignments" "app-role-assignments-$($_.id)" }
+sdt analyze entra-export --out inventory.json
+```
+
+Each Graph page is saved as it arrived, so nothing is reformatted. Secret values never reach
+the output: credentials keep their key id and dates only. The window for Entra grants is a
+fixed 90 days.
 
 ### The rules
 
+The full catalog, with what each importer records, is in [docs/rules.md](docs/rules.md).
+
 | Rule | Fires when | Severity |
 |:---|:---|:---|
-| `dormant-privileged-identity` | The platform records the identity's use, nothing was used in the window, and it holds a `write`/`admin` grant | `critical` with no owner, else `high` |
+| `dormant-privileged-identity` | The platform records the identity's own use, nothing was used in the window, and it holds a `write`/`admin` grant | `critical` when the source records no owner, else `high` |
 | `unused-grant` | A grant whose use is recorded (`usageKnown: true`) wasn't used in its window. Quiet when the identity is already dormant | `high`, `medium` for `read` |
 | `narrower-permission-available` | A grant is in the versioned narrower-permission table (GitHub `administration` → `repository_creation`) | `medium` |
 | `usage-not-observable` | `write`/`admin` grants whose use the platform doesn't record, such as `iam:PassRole`. They are listed, not judged | `info` |
@@ -128,9 +229,9 @@ this. Validate against the target environment first.`
 | Folder | What's inside |
 |:---|:---|
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the spec and build plan, and ADR-001. |
-| [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules and the draft templates. One TypeScript core that the browser demo imports too. |
+| [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules, the draft templates and the AWS and Entra importers. One TypeScript core that the browser demo imports too. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite's agent inventory schema v0.1, vendored. Every read and write is validated against it. |
-| [**🧪 tests/**](tests/) | `node:test` suites, run with `npm test`. |
+| [**🧪 tests/**](tests/) | `node:test` suites, run with `npm test`, over fictional fixtures, including AWS and Entra exports built from the documented response shapes. |
 | [**🖥️ site/**](site/) | The demo page: `index.html`, the fictional `sample.inventory.json`, and `demo.ts`/`app.ts`, which import the engine from `src/`. `npm run build` writes it to `_site/`. |
 
 ## 🛠️ Development

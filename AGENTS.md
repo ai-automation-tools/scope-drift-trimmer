@@ -49,8 +49,11 @@ Full spec: `docs/product/spec.md`. Slice order: `docs/product/build-plan.md`. Wo
   templates and adapters take file **contents** as arguments and must not import Node
   built-ins: the browser demo in `site/` imports them too (ADR-001). File reading lives in a
   separate Node-only module.
-- Adapters sit behind one `Adapter` interface (`parse(files) -> identities[]`). A new platform
-  is one module plus fixtures, and passes the shared adapter contract test.
+- Adapters sit behind one `Adapter` interface (`parse(files) -> identities[]`, plus `accepts`
+  to claim a file by its shape). A new platform is one module plus fixtures, registered in
+  `src/import.ts`, and passes the shared adapter contract test. Data the schema has no place
+  for (per-identity source files, AWS recommended policies) goes in
+  `x["scope-drift-trimmer"]`.
 - Settings live in `.env` at the repo root, names in `.env.example`; the real environment
   wins. There are none today: the MVP reads exported files and never holds a credential. If
   one is ever needed, load it with Node's `util.parseEnv`. Never tell anyone to set a Windows

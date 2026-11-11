@@ -2,12 +2,18 @@
 import { parseArgs } from "node:util";
 import { analyze, failsAt, SEVERITIES } from "./engine.ts";
 import { InventoryError } from "./inventory.ts";
-import { readInputFile, writeJson } from "./io.ts";
+import { readInputs, writeJson } from "./io.ts";
 import type { Severity } from "./types.ts";
 import { VERSION } from "./version.ts";
 
 const USAGE = `Usage: sdt analyze <inventory.json> [--out <file>] [--fail-on <severity>]
+       sdt analyze <export files or folders...> [--out <file>] [--fail-on <severity>]
        sdt --version
+
+  Export files are AWS CLI output (IAM Access Analyzer unused-access findings, the analyzer,
+  its recommendations, IAM last-accessed reports) and Microsoft Graph exports (service
+  principals, appRoleAssignments, oauth2PermissionGrants, servicePrincipalSignInActivities).
+  A folder stands for every .json file in it. The README shows the export commands.
 
   --out <file>          write the inventory with scope-drift-trimmer findings added
   --fail-on <severity>  exit 1 when a finding is at or above: ${SEVERITIES.join(", ")}
@@ -40,7 +46,7 @@ function main(argv: string[]): number {
     console.log(USAGE);
     return 0;
   }
-  if (positionals[0] !== "analyze" || positionals.length !== 2) {
+  if (positionals[0] !== "analyze" || positionals.length < 2) {
     console.error(USAGE);
     return 2;
   }
@@ -52,7 +58,7 @@ function main(argv: string[]): number {
 
   let result;
   try {
-    result = analyze(readInputFile(positionals[1]));
+    result = analyze(readInputs(positionals.slice(1)));
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     if (e instanceof InventoryError || code === "ENOENT" || code === "EISDIR") {

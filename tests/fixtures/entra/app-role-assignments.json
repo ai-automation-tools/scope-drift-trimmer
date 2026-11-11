@@ -1,0 +1,10 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#servicePrincipals('0f5e2c1a-7b3d-4e8f-9a60-1c2d3e4f5a6b')/appRoleAssignments",
+  "value": [
+    { "id": "Qm9ndXMtYXNzaWdubWVudC0x", "appRoleId": "aaaa0001-0000-4000-8000-000000000001", "createdDateTime": "2023-02-14T09:00:00Z", "principalDisplayName": "legacy-invoice-sync", "principalId": "0f5e2c1a-7b3d-4e8f-9a60-1c2d3e4f5a6b", "principalType": "ServicePrincipal", "resourceDisplayName": "Microsoft Graph", "resourceId": "9a1b2c3d-0000-4000-8000-00000000a001" },
+    { "id": "Qm9ndXMtYXNzaWdubWVudC0y", "appRoleId": "aaaa0001-0000-4000-8000-000000000002", "createdDateTime": "2023-02-14T09:00:00Z", "principalDisplayName": "legacy-invoice-sync", "principalId": "0f5e2c1a-7b3d-4e8f-9a60-1c2d3e4f5a6b", "principalType": "ServicePrincipal", "resourceDisplayName": "Microsoft Graph", "resourceId": "9a1b2c3d-0000-4000-8000-00000000a001" },
+    { "id": "Qm9ndXMtYXNzaWdubWVudC0z", "appRoleId": "aaaa0001-0000-4000-8000-000000000003", "createdDateTime": "2023-02-14T09:00:00Z", "principalDisplayName": "legacy-invoice-sync", "principalId": "0f5e2c1a-7b3d-4e8f-9a60-1c2d3e4f5a6b", "principalType": "ServicePrincipal", "resourceDisplayName": "Microsoft Graph", "resourceId": "9a1b2c3d-0000-4000-8000-00000000a001" },
+    { "id": "Qm9ndXMtYXNzaWdubWVudC00", "appRoleId": "aaaa0001-0000-4000-8000-000000000004", "createdDateTime": "2025-06-01T09:00:00Z", "principalDisplayName": "hr-directory-reader", "principalId": "6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d", "principalType": "ServicePrincipal", "resourceDisplayName": "Microsoft Graph", "resourceId": "9a1b2c3d-0000-4000-8000-00000000a001" },
+    { "id": "Qm9ndXMtYXNzaWdubWVudC01", "appRoleId": "aaaa0001-0000-4000-8000-000000000002", "createdDateTime": "2024-03-01T09:00:00Z", "principalDisplayName": "orphan-webhook", "principalId": "8c9d0e1f-2a3b-4c4d-8e5f-6a7b8c9d0e1f", "principalType": "ServicePrincipal", "resourceDisplayName": "Microsoft Graph", "resourceId": "9a1b2c3d-0000-4000-8000-00000000a001" }
+  ]
+}

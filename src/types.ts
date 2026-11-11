@@ -17,6 +17,19 @@ export interface Grant {
   observationDays?: number;
 }
 
+export interface Credential {
+  id: string;
+  type: "api-key" | "oauth-token" | "personal-access-token" | "access-key" | "certificate" | "ssh-key" | "password" | "session" | "other";
+  fingerprint?: string;
+  location?: "env-file" | "os-keychain" | "vault" | "config-file" | "ci-secret" | "platform" | "unknown";
+  createdAt?: Timestamp;
+  expiresAt?: Timestamp;
+  rotatedAt?: Timestamp;
+  lastUsedAt?: Timestamp;
+  revokedAt?: Timestamp;
+  lastVerifiedDeadAt?: Timestamp;
+}
+
 export interface Owner {
   name?: string;
   email?: string;
@@ -34,7 +47,7 @@ export interface Identity {
   createdAt?: Timestamp;
   lastUsedAt?: Timestamp;
   retiredAt?: Timestamp;
-  credentials?: unknown[];
+  credentials?: Credential[];
   grants?: Grant[];
   tools?: unknown[];
   tags?: string[];

@@ -1,0 +1,6 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#oauth2PermissionGrants",
+  "value": [
+    { "id": "R3JhbnQtZXhhbXBsZS0x", "clientId": "7b8c9d0e-1f2a-4b3c-9d4e-5f6a7b8c9d0e", "consentType": "AllPrincipals", "principalId": null, "resourceId": "9a1b2c3d-0000-4000-8000-00000000a001", "scope": "User.Read Files.ReadWrite.All" }
+  ]
+}
