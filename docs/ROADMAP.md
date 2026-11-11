@@ -12,9 +12,9 @@
 
 ---
 
-The Scope-Drift-Trimmer Weekly Roadmap routine works this file top to bottom every Tuesday,
-Thursday and Saturday: it takes the first open item that isn't `🔒 Needs owner` (or up to six
-`small` ones), builds it, ticks it and opens a `roadmap/auto-<date>` PR. **Every item above
+The Scope-Drift-Trimmer roadmap routine works this file top to bottom, one item per run, as
+`roadmap/auto-` PRs: it takes the first open item that isn't `🔒 Needs owner` (or up to six
+`small` ones), builds it and ticks it. **Every item above
 `## After public release` is a release gate.** Scope Drift Trimmer goes public when all of them
 are ticked and Mike says so. Ticking an item adds its line to the [changelog](CHANGELOG.md) and
 updates any doc it made stale, in the same commit.
@@ -53,7 +53,9 @@ this repo owns; no item needs a real tenant, a credential or network access.
 - [x] `small` **Secret scan.** `gitleaks git . --log-opts=--all` comes back clean on the full history. — done 2026-11-05: clean on the scaffold commit
 - [ ] `small` **README usage matches the code.** Install line, every command and flag, the copy-paste AWS CLI and PowerShell/Graph export commands for both adapters, a sample run on a fixture with its real output, and the spec's Won't list stated plainly (drafts only, no live API calls, no secrets held, no GCP). Each command run against the packed build (`npm pack`, installed in a scratch folder) and behaving as written.
 - [ ] `small` **Responsible use.** A README section saying the tool is defensive only: run it on systems and exports you own or are authorized to review; what it never does (no live API calls, no revocation it runs itself (every remediation is a draft a human reviews and runs)); and that the demo uses planted, fictional fixtures only. `SECURITY.md` links to it. (Pillar A release gate, org charter 2026-11-05.)
-- [ ] **Live demo at `https://ai-automation-tools.dev/scope-drift-trimmer/`.** An `actions/deploy-pages` workflow builds and publishes `_site/` from `main` (enable Pages for the repo with `gh api` in the same PR), until the publish step moves it to `https://scope-drift-trimmer-demo.ai-automation-tools.dev/`. The page shows the MVP working: `legacy-invoice-sync` flagged on first load, a visitor's own file analyzed in the browser. It keeps the source bar and app-icon favicon from the shell, holds only fictional data, and makes no network call after load. The README hero's Live Demo badge points at it.
+- [ ] `small` **Inventory output validates in CI.** CI runs `sdt analyze` on the planted fixture and validates the output against `https://ai-automation-tools.dev/schemas/agent-inventory/v0.1.json` (the vendored copy in `schemas/`, checked to match the published one); it fails when the output doesn't validate or the `legacy-invoice-sync` finding is missing
+- [ ] `small` **Build stamp.** `<meta name="build" content="__BUILD_SHA__">` in `site/index.html`'s `<head>`
+- [ ] **Live demo at `https://ai-automation-tools.dev/scope-drift-trimmer/`.** An `actions/deploy-pages` workflow builds and publishes `_site/` from `main`, replacing `__BUILD_SHA__` with `${{ github.sha }}` before the upload (enable Pages for the repo with `gh api` in the same PR), until the publish step moves it to `https://scope-drift-trimmer-demo.ai-automation-tools.dev/`. The page shows the MVP working: `legacy-invoice-sync` flagged on first load, a visitor's own file analyzed in the browser. It keeps the source bar and app-icon favicon from the shell, holds only fictional data, and makes no network call after load. The README hero's Live Demo badge points at it.
 
 ## After public release
 
