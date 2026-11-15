@@ -5,6 +5,9 @@ tenants, and it writes draft changes to those permissions. It is built to read t
 sending anything anywhere and to never apply a change itself, so we take reports about it
 seriously.
 
+Run it only on systems and exports you own or are authorized to review; the README's
+[Responsible use](README.md#responsible-use) section says what that means.
+
 ## Reporting a vulnerability
 
 **Please don't open a public issue for a security vulnerability.**

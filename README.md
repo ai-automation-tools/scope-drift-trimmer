@@ -66,19 +66,29 @@ file server; it uses JavaScript modules, so opening the file directly won't work
 ### What it won't do
 
 - Apply a change. It drafts; you review and run.
-- Call a platform API or hold a credential. It reads exported files.
+- Call a platform API or hold a credential. It reads exported files, and makes no network call.
+- Hold or print a secret. Credentials keep their key id and dates; secret values are dropped.
 - Narrow an AWS wildcard from last-accessed data alone. That data leaves out data-plane
   actions, so the narrowed role would break.
 - Cover human identities or GCP, or run as a hosted service with accounts or telemetry.
 
+### Responsible use
+
+Scope Drift Trimmer is a defensive tool. Run it only on systems and exports you own or are
+authorized to review. It makes no live API calls and never revokes anything itself: every
+remediation is a draft that a human reviews and runs. The demo page uses planted, fictional
+fixtures only; a file you load into it is analyzed in your browser and never uploaded.
+
 ## 🚀 Quick start
 
-From a clone, with Node 22.18 or newer:
+It isn't on npm yet, so install `sdt` from a clone, with Node 22.18 or newer:
 
 ```bash
 npm install          # dev dependencies only; there are no runtime dependencies
 npm run build        # compiles src/ to dist/
-node dist/src/cli.js analyze tests/fixtures/estate.inventory.json --out inventory.json
+npm pack             # writes scope-drift-trimmer-0.0.0.tgz
+npm install --global ./scope-drift-trimmer-0.0.0.tgz
+sdt analyze tests/fixtures/estate.inventory.json --out inventory.json
 ```
 
 The fixture is a fictional estate written by another suite tool. The run prints a summary,
@@ -96,11 +106,11 @@ The same command reads export files. On the fictional Entra export in `tests/fix
 (a folder stands for every `.json` file in it):
 
 ```bash
-node dist/src/cli.js analyze tests/fixtures/entra
+sdt analyze tests/fixtures/entra
 ```
 
 ```text
-sdt 0.0.0: app-role-assignments.json, oauth2-permission-grants.json, service-principals.json, sign-in-activity.json, 4 identities, 7 grants, as of 2026-11-11T05:51:23.680Z
+sdt 0.0.0: app-role-assignments.json, oauth2-permission-grants.json, service-principals.json, sign-in-activity.json, 4 identities, 7 grants, as of 2026-11-15T05:31:26.410Z
 Findings: 1 critical, 1 high, 0 medium, 0 low, 2 info
   CRITICAL  legacy-invoice-sync: Dormant privileged identity with no owner: legacy-invoice-sync has not been used in 90 days and holds Mail.ReadWrite, Mail.Send
   HIGH      reporting-dashboard: Dormant privileged identity: reporting-dashboard has not been used in 90 days and holds Files.ReadWrite.All
@@ -118,14 +128,17 @@ sign-in report at all, which is not the same as never signing in.
 sdt analyze <inventory.json> [--out <file>] [--fail-on <severity>]
 sdt analyze <export files or folders...> [--out <file>] [--fail-on <severity>]
 sdt --version
+sdt --help
 ```
 
 | Flag | What it does |
 |:---|:---|
 | `--out <file>` | Writes the inventory with this run's findings. Nothing is written when the input is invalid. |
 | `--fail-on <severity>` | Exits 1 when a finding is at or above `critical`, `high`, `medium`, `low` or `info`. For CI. |
+| `--version`, `-v` | Prints `sdt` and its version. |
+| `--help`, `-h` | Prints the usage above. |
 
-Until the npm release, `sdt` here means `node dist/src/cli.js` in a built clone.
+In a built clone, `node dist/src/cli.js` does the same without installing.
 Pass either one inventory or any number of export files, not both. Exports are imported into
 a schema v0.1 inventory first, with the run's own time as the end of every window, so analyze
 an export the day you take it.
@@ -241,6 +254,10 @@ npm run lint    # ESLint plus tsc --noEmit
 npm test        # node --test
 npm run build   # tsc to dist/, and the demo to _site/
 ```
+
+CI also runs `sdt analyze` on the demo's planted estate and `scripts/check-inventory.ts` on the
+result: the vendored schema has to match the [published one](https://ai-automation-tools.dev/schemas/agent-inventory/v0.1.json),
+the output has to validate, and `legacy-invoice-sync` has to be flagged `critical`.
 
 Agents working this repo read [AGENTS.md](AGENTS.md) first. Security reports go through
 [SECURITY.md](SECURITY.md), not public issues.

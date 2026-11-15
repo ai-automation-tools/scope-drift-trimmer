@@ -2,6 +2,7 @@ node_modules/
 dist/
 _site/
 coverage/
+*.tgz
 *.log
 .env
 .env.*

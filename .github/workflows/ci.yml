@@ -42,3 +42,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Analyze the planted demo estate
+        run: node dist/src/cli.js analyze site/sample.inventory.json --out sample.out.json
+
+      - name: Validate the output against the published schema
+        run: node scripts/check-inventory.ts sample.out.json
