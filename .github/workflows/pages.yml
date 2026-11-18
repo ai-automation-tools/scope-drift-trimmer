@@ -1,0 +1,50 @@
+name: Pages
+
+# Publishes the demo on every push to main: `npm run build` compiles site/ with the engine it
+# imports into _site/, the page's <meta name="build"> gets the commit it was built from, and
+# _site/ goes to GitHub Pages. Every page path is relative, so it works under
+# /scope-drift-trimmer/ and on a custom domain alike.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Stamp the build
+        run: |
+          sed -i "s/__BUILD_SHA__/${GITHUB_SHA}/" _site/index.html
+          grep -q "<meta name=\"build\" content=\"${GITHUB_SHA}\">" _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
