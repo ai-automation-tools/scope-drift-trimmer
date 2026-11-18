@@ -259,6 +259,9 @@ CI also runs `sdt analyze` on the demo's planted estate and `scripts/check-inven
 result: the vendored schema has to match the [published one](https://ai-automation-tools.dev/schemas/agent-inventory/v0.1.json),
 the output has to validate, and `legacy-invoice-sync` has to be flagged `critical`.
 
+On every push to `main`, `.github/workflows/pages.yml` runs `npm run build`, stamps the page's
+`<meta name="build">` with the commit and publishes `_site/` to GitHub Pages.
+
 Agents working this repo read [AGENTS.md](AGENTS.md) first. Security reports go through
 [SECURITY.md](SECURITY.md), not public issues.
 
