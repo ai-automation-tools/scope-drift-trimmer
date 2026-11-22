@@ -1,0 +1,50 @@
+[
+  {
+    "client_id": "0oa1oktasvc00001",
+    "client_id_issued_at": 1740823200,
+    "client_name": "user-provisioner",
+    "client_secret": "fixture-client-secret-not-real",
+    "client_secret_expires_at": 0,
+    "application_type": "service",
+    "grant_types": ["client_credentials"],
+    "response_types": ["token"],
+    "token_endpoint_auth_method": "client_secret_basic"
+  },
+  {
+    "client_id": "0oa1oktasvc00002",
+    "client_id_issued_at": 1740823200,
+    "client_name": "group-sync-reader",
+    "application_type": "service",
+    "grant_types": ["client_credentials"],
+    "response_types": ["token"],
+    "token_endpoint_auth_method": "private_key_jwt"
+  },
+  {
+    "client_id": "0oa1oktasvc00003",
+    "client_id_issued_at": 1709287200,
+    "client_name": "stale-offboarding-bot",
+    "application_type": "service",
+    "grant_types": ["client_credentials"],
+    "response_types": ["token"],
+    "token_endpoint_auth_method": "client_secret_basic"
+  },
+  {
+    "client_id": "0oa1oktasvc00004",
+    "client_id_issued_at": 1740823200,
+    "client_name": "audit-exporter",
+    "application_type": "service",
+    "grant_types": ["client_credentials"],
+    "response_types": ["token"],
+    "token_endpoint_auth_method": "private_key_jwt"
+  },
+  {
+    "client_id": "0oa1oktaweb00001",
+    "client_id_issued_at": 1740823200,
+    "client_name": "Intranet portal",
+    "application_type": "web",
+    "grant_types": ["authorization_code"],
+    "redirect_uris": ["https://intranet.example.com/callback"],
+    "response_types": ["code"],
+    "token_endpoint_auth_method": "client_secret_basic"
+  }
+]

@@ -27,14 +27,14 @@
 <p align="center">
   <img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Node.js-22.18+-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js 22.18+">
-  <img src="https://img.shields.io/badge/platforms-Entra_ID_·_AWS_IAM-0078D4?style=flat-square" alt="Platforms: Entra ID and AWS IAM">
+  <img src="https://img.shields.io/badge/platforms-Entra_ID_·_AWS_IAM_·_Okta-0078D4?style=flat-square" alt="Platforms: Entra ID, AWS IAM and Okta">
   <img src="https://img.shields.io/badge/changes_applied-zero-6B7280?style=flat-square" alt="Changes applied: zero">
 </p>
 
 ---
 
 > [!WARNING]
-> **Early.** `sdt analyze` reads an agent inventory document or AWS and Entra ID export files
+> **Early.** `sdt analyze` reads an agent inventory document or AWS, Entra ID and Okta export files
 > and runs all four rules with draft fixes, and the demo page in `site/` runs the same engine
 > in a browser (it goes live with the Pages workflow). It isn't on npm yet. The
 > [roadmap](docs/ROADMAP.md) says what's left before release.
@@ -43,7 +43,8 @@
 
 Service principals, IAM roles and bot accounts pick up permissions and rarely give them back.
 The platforms do record some usage, but unevenly. AWS knows which management actions a role
-called; Entra ID only knows whether an app signed in at all; GitHub knows almost nothing per
+called; Entra ID only knows whether an app signed in at all; Okta logs the scopes in each token
+and an app's writes, but none of its reads; GitHub knows almost nothing per
 permission. A list of "unused permissions" that ignores that difference will tell you to remove
 something that is in use.
 
@@ -51,7 +52,7 @@ Scope Drift Trimmer works in four steps:
 
 | Step | What it does |
 |:---|:---|
-| **Import** | Reads files you export yourself: AWS Access Analyzer unused-access findings and last-accessed details, an Entra ID Graph export, or an agent inventory document from another Agent Security Suite tool. |
+| **Import** | Reads files you export yourself: AWS Access Analyzer unused-access findings and last-accessed details, an Entra ID Graph export, Okta service apps with their scope grants and System Log, or an agent inventory document from another Agent Security Suite tool. |
 | **Grade** | Marks every grant `usageKnown: true` only when the platform records its use, and says which data and which window back each claim. |
 | **Flag** | Dormant privileged identities (worst when nobody owns them), unused write grants, permissions with a narrower alternative, and grants whose use can't be observed at all. |
 | **Draft** | A platform-shaped change per finding: a Graph `DELETE`, an AWS policy diff, a GitHub permission downgrade, an Okta scope revoke. Each starts with `DRAFT.` and goes nowhere until you run it. |
@@ -121,6 +122,23 @@ Findings: 1 critical, 1 high, 0 medium, 0 low, 2 info
 `hr-directory-reader` signed in on 2026-10-30, inside the window, and Entra records sign-ins per app, not per
 permission, so its `User.ReadWrite.All` is listed and not judged. `orphan-webhook` isn't in the
 sign-in report at all, which is not the same as never signing in.
+
+The fictional Okta export in `tests/fixtures/okta/` gives:
+
+```text
+sdt 0.0.0: clients.json, grants-0oa1oktasvc00001.json, grants-others.json, system-log.json, 4 identities, 8 grants, as of 2026-11-22T05:41:13.272Z
+Findings: 0 critical, 2 high, 1 medium, 0 low, 1 info
+  HIGH      user-provisioner: Unused grant: user-provisioner holds okta.groups.manage on okta:org, not used in 90 days
+  HIGH      stale-offboarding-bot: Dormant privileged identity: stale-offboarding-bot has not been used in 90 days and holds okta.users.manage
+  MEDIUM    group-sync-reader: Narrower permission available: group-sync-reader holds okta.groups.manage (write) but the System Log shows no writes; okta.groups.read may be enough
+  INFO      audit-exporter: Use not observable: 1 write/admin grant on audit-exporter could not be judged
+```
+
+No token issued to `user-provisioner` in 90 days carried `okta.groups.manage`, so it can't have
+been used. `group-sync-reader` did get tokens with `okta.groups.manage` but made no group change
+the System Log records, which reads as read-only use; that's an inference, so the finding is a
+narrowing to `okta.groups.read`, not an unused grant. `audit-exporter`'s token events don't say
+which scopes they carried, so its grants aren't judged.
 
 ### Usage
 
@@ -221,6 +239,44 @@ Each Graph page is saved as it arrived, so nothing is reformatted. Secret values
 the output: credentials keep their key id and dates only. The window for Entra grants is a
 fixed 90 days.
 
+### Export from Okta
+
+Needs PowerShell 7.1 or newer and an Okta API token from an admin with the Read-Only
+Administrator role. The token is typed at the prompt and lives only in that session. Okta keeps
+90 days of System Log, which is the window for every Okta grant:
+
+```powershell
+$okta = 'https://your-org.okta.com'
+$h = @{ Authorization = "SSWS $(Read-Host -MaskInput 'Okta API token')"; Accept = 'application/json' }
+New-Item -ItemType Directory -Force okta-export | Out-Null
+function Save-Okta([string]$Uri, [string]$Name) {
+  $n = 0
+  while ($Uri) {
+    $r = Invoke-WebRequest -Uri $Uri -Headers $h
+    if ($r.Content.Trim() -ne '[]') { $n++; Set-Content -Path "okta-export/$Name-$n.json" -Value $r.Content -Encoding utf8 }
+    $Uri = $r.RelationLink['next']
+  }
+}
+Save-Okta "$okta/oauth2/v1/clients?limit=200" clients
+$apps = Get-ChildItem okta-export/clients-*.json | ForEach-Object { Get-Content $_ -Raw | ConvertFrom-Json } |
+  Where-Object application_type -eq 'service'
+foreach ($a in $apps) { Save-Okta "$okta/api/v1/apps/$($a.client_id)/grants" "grants-$($a.client_id)" }
+$until = (Get-Date).ToUniversalTime()
+$range = "since=$($until.AddDays(-90).ToString('yyyy-MM-ddTHH:mm:ssZ'))&until=$($until.ToString('yyyy-MM-ddTHH:mm:ssZ'))"
+$filter = [uri]::EscapeDataString((($apps | ForEach-Object { "actor.id eq `"$($_.client_id)`"" }) -join ' or '))
+Save-Okta "$okta/api/v1/logs?$range&limit=1000&filter=$filter" system-log
+sdt analyze okta-export --out inventory.json
+```
+
+Only service apps (client credentials) are imported; other OAuth apps act for people. The
+System Log query names every service app in the export, so an app with no event in it got no
+token in 90 days. Empty pages aren't saved: with no System Log file at all, every Okta grant
+stays `usageKnown: false`. With a lot of service apps the filter can outgrow a URL; split
+`$apps` and run the log query once per part. Okta doesn't document where an access-token
+event lists its scopes or which field names the calling app, so the importer reads
+`debugContext.debugData.grantedScopes` and `actor.id`, and evidence calls what it concludes
+from them inference. The client secret never reaches the output.
+
 ### The rules
 
 The full catalog, with what each importer records, is in [docs/rules.md](docs/rules.md).
@@ -229,7 +285,7 @@ The full catalog, with what each importer records, is in [docs/rules.md](docs/ru
 |:---|:---|:---|
 | `dormant-privileged-identity` | The platform records the identity's own use, nothing was used in the window, and it holds a `write`/`admin` grant | `critical` when the source records no owner, else `high` |
 | `unused-grant` | A grant whose use is recorded (`usageKnown: true`) wasn't used in its window. Quiet when the identity is already dormant | `high`, `medium` for `read` |
-| `narrower-permission-available` | A grant is in the versioned narrower-permission table (GitHub `administration` → `repository_creation`) | `medium` |
+| `narrower-permission-available` | A grant is in the versioned narrower-permission table (GitHub `administration` → `repository_creation`), or an Okta `.manage` scope was in the app's tokens but no write it covers is in the System Log (the draft grants the `.read` scope back) | `medium` |
 | `usage-not-observable` | `write`/`admin` grants whose use the platform doesn't record, such as `iam:PassRole`. They are listed, not judged | `info` |
 
 No rule calls a grant unused unless the platform recorded its use over a stated window, and an
@@ -242,9 +298,9 @@ this. Validate against the target environment first.`
 | Folder | What's inside |
 |:---|:---|
 | [**📚 docs/**](docs/README.md) | The roadmap, the changelog, the spec and build plan, and ADR-001. |
-| [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules, the draft templates and the AWS and Entra importers. One TypeScript core that the browser demo imports too. |
+| [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules, the draft templates and the AWS, Entra and Okta importers. One TypeScript core that the browser demo imports too. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite's agent inventory schema v0.1, vendored. Every read and write is validated against it. |
-| [**🧪 tests/**](tests/) | `node:test` suites, run with `npm test`, over fictional fixtures, including AWS and Entra exports built from the documented response shapes. |
+| [**🧪 tests/**](tests/) | `node:test` suites, run with `npm test`, over fictional fixtures, including AWS, Entra and Okta exports built from the documented response shapes. |
 | [**🖥️ site/**](site/) | The demo page: `index.html`, the fictional `sample.inventory.json`, and `demo.ts`/`app.ts`, which import the engine from `src/`. `npm run build` writes it to `_site/`. |
 
 ## 🛠️ Development

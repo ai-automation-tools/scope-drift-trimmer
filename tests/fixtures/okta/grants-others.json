@@ -1,0 +1,57 @@
+[
+  {
+    "id": "oag1oktagrant0201",
+    "status": "ACTIVE",
+    "created": "2025-03-02T10:00:00.000Z",
+    "createdBy": { "id": "00u1oktaadmin0001", "type": "User" },
+    "lastUpdated": "2025-03-02T10:00:00.000Z",
+    "issuer": "https://example-org.okta.example",
+    "clientId": "0oa1oktasvc00002",
+    "scopeId": "okta.groups.manage",
+    "source": "ADMIN"
+  },
+  {
+    "id": "oag1oktagrant0301",
+    "status": "ACTIVE",
+    "created": "2024-03-01T10:00:00.000Z",
+    "createdBy": { "id": "00u1oktaadmin0002", "type": "User" },
+    "lastUpdated": "2024-03-01T10:00:00.000Z",
+    "issuer": "https://example-org.okta.example",
+    "clientId": "0oa1oktasvc00003",
+    "scopeId": "okta.users.manage",
+    "source": "ADMIN"
+  },
+  {
+    "id": "oag1oktagrant0302",
+    "status": "ACTIVE",
+    "created": "2024-03-01T10:00:00.000Z",
+    "createdBy": { "id": "00u1oktaadmin0002", "type": "User" },
+    "lastUpdated": "2024-03-01T10:00:00.000Z",
+    "issuer": "https://example-org.okta.example",
+    "clientId": "0oa1oktasvc00003",
+    "scopeId": "okta.apps.read",
+    "source": "ADMIN"
+  },
+  {
+    "id": "oag1oktagrant0401",
+    "status": "ACTIVE",
+    "created": "2025-03-04T10:00:00.000Z",
+    "createdBy": { "id": "00u1oktaadmin0001", "type": "User" },
+    "lastUpdated": "2025-03-04T10:00:00.000Z",
+    "issuer": "https://example-org.okta.example",
+    "clientId": "0oa1oktasvc00004",
+    "scopeId": "okta.logs.read",
+    "source": "ADMIN"
+  },
+  {
+    "id": "oag1oktagrant0402",
+    "status": "ACTIVE",
+    "created": "2025-03-04T10:00:00.000Z",
+    "createdBy": { "id": "00u1oktaadmin0001", "type": "User" },
+    "lastUpdated": "2025-03-04T10:00:00.000Z",
+    "issuer": "https://example-org.okta.example",
+    "clientId": "0oa1oktasvc00004",
+    "scopeId": "okta.users.manage",
+    "source": "ADMIN"
+  }
+]

@@ -20,7 +20,7 @@ export interface Analysis {
 }
 
 /**
- * Analyzes one inventory file, or a set of AWS and Entra export files (imported first, with
+ * Analyzes one inventory file, or a set of AWS, Entra and Okta export files (imported first, with
  * `now` as the window's end). Throws InventoryError on an invalid input or output.
  */
 export function analyze(input: InputFile | InputFile[], opts: { now?: Date } = {}): Analysis {
@@ -34,7 +34,7 @@ export function analyze(input: InputFile | InputFile[], opts: { now?: Date } = {
 function analyzeInventory(file: InputFile, now: Date): Analysis {
   const input = parseInventory(file);
   const ext = (input.x?.[PRODUCER] ?? {}) as SdtExtensions;
-  const ctx = { asOf: Date.parse(input.generatedAt), source: file.name, sources: ext.sources, awsRecommendations: ext.awsRecommendations };
+  const ctx = { asOf: Date.parse(input.generatedAt), source: file.name, sources: ext.sources, awsRecommendations: ext.awsRecommendations, oktaReadOnly: ext.oktaReadOnly };
   const previous = new Map(
     (input.findings ?? []).filter((f) => f.ruleId.startsWith(`${PRODUCER}/`)).map((f) => [f.id, f]),
   );

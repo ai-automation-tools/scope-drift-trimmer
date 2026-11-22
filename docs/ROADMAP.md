@@ -63,7 +63,7 @@ Nothing below blocks go-live.
 
 ### 🧩 Next slices
 
-- [ ] **Slice 4: Okta import.** Service apps, granted scopes and 90 days of System Log events, with the event-to-scope mapping marked as inference in evidence. Fictional fixtures; the Okta draft adds back the `.read` scope when one was observed.
+- [x] **Slice 4: Okta import.** Service apps, granted scopes and 90 days of System Log events, with the event-to-scope mapping marked as inference in evidence. Fictional fixtures; the Okta draft adds back the `.read` scope when one was observed. — done 2026-11-21: `src/okta.ts` behind the `Adapter` interface reads the Client API's service apps, `/api/v1/apps/{id}/grants` and the System Log; a scope no token carried in 90 days is unused, and a `.manage` scope in tokens with no mapped write event raises `narrower-permission-available` (not `unused-grant`), its evidence marking the mapping (`OKTA_WRITE_EVENTS`, versioned) as inference and its draft granting the `.read` scope back; the removal draft no longer suggests an add-back. Fixtures in `tests/fixtures/okta/`, 7 tests in `tests/import.test.ts` plus the contract test; README export snippet (parse-checked, not run against a tenant) and `docs/rules.md` Okta section
 - [ ] **Slice 5: GitHub import.** App installations and their permissions, plus API-request audit events where the org has them; without them every permission is `usageKnown: false`.
 - [ ] **Slice 6: access-review CSV and `sdt merge`.** A CSV for quarterly reviews, and a merge command that combines GhostGrant, MCPFrisk and this tool's documents by identity id.
 - [ ] **Slice 7: read-only live fetch for one platform.** Token read from the environment or `.env`, never written; only if users ask for it in issues.

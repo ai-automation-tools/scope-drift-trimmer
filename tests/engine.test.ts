@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { analyze, failsAt } from "../src/engine.ts";
 import { awsAdapter } from "../src/aws.ts";
 import { entraAdapter } from "../src/entra.ts";
+import { oktaAdapter } from "../src/okta.ts";
 import { inventoryAdapter, InventoryError, type Adapter } from "../src/inventory.ts";
 import { validateInventory } from "../src/schema.ts";
 import { VERSION } from "../src/version.ts";
@@ -15,6 +16,7 @@ const ADAPTERS: [Adapter, string[]][] = [
   [inventoryAdapter, ["estate.inventory.json"]],
   [awsAdapter, folder("aws")],
   [entraAdapter, folder("entra")],
+  [oktaAdapter, folder("okta")],
 ];
 
 for (const [adapter, files] of ADAPTERS) {
