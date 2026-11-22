@@ -73,23 +73,25 @@ const github = (identity: Identity, grants: Grant[], after: (g: Grant) => string
 
 // Okta: "Revoke an app grant" and "Grant consent to scope", Okta Management API, checked
 // 2026-11-05 at https://developer.okta.com/docs/api/openapi/okta-management/management/tag/ApplicationGrants/
-// Revoke needs the okta.appGrants.manage scope.
-const okta: Template = (identity, grants) => {
-  const appId = nativeId(identity).replace(/^app\//, "");
-  return grants.flatMap((g) => {
-    const read = /\.manage$/.test(g.permission) ? clean(g.permission.replace(/\.manage$/, ".read")) : null;
-    return [
-      `# Revoke ${clean(g.permission)} from ${clean(identity.displayName)}`,
-      `DELETE https://{yourOktaDomain}/api/v1/apps/${appId}/grants/${clean(g.id)}`,
-      ...(read
-        ? [
-            `# If the System Log shows the app only reads, grant ${read} back:`,
-            `POST https://{yourOktaDomain}/api/v1/apps/${appId}/grants {"issuer": "https://{yourOktaDomain}", "scopeId": "${read}"}`,
-          ]
-        : []),
-    ];
-  });
-};
+// Revoke needs the okta.appGrants.manage scope. The .read scope is granted back only in the
+// narrowing draft, where the System Log showed the app reading with the .manage scope.
+const oktaApp = (identity: Identity) => nativeId(identity).replace(/^app\//, "");
+const okta: Template = (identity, grants) =>
+  grants.flatMap((g) => [
+    `# Revoke ${clean(g.permission)} from ${clean(identity.displayName)}`,
+    `DELETE https://{yourOktaDomain}/api/v1/apps/${oktaApp(identity)}/grants/${clean(g.id)}`,
+  ]);
+
+const oktaNarrowing = (identity: Identity, grant: Grant, replacement: string) => [
+  ...(identity.grants ?? []).some((g) => g.permission === replacement)
+    ? [`# ${clean(identity.displayName)} already holds ${clean(replacement)}; only the revoke is needed.`]
+    : [
+        `# Grant ${clean(replacement)} first, so the app keeps reading:`,
+        `POST https://{yourOktaDomain}/api/v1/apps/${oktaApp(identity)}/grants {"issuer": "https://{yourOktaDomain}", "scopeId": "${clean(replacement)}"}`,
+      ],
+  ...okta(identity, [grant]),
+  `# Then have the app request ${clean(replacement)} instead of ${clean(grant.permission)} in its token requests.`,
+];
 
 const generic: Template = (identity, grants) =>
   grants.map(
@@ -114,6 +116,8 @@ export function draftNarrowing(identity: Identity, grant: Grant, replacement: st
   const body =
     identity.platform === "github"
       ? github(identity, [grant], (g) => `  ${clean(replacement)}: ${clean(g.access ?? "write")}`)
-      : [`Replace ${clean(grant.permission)} on ${clean(grant.resource)} with ${clean(replacement)} for ${clean(identity.id)} in the ${clean(identity.platform)} console.`];
+      : identity.platform === "okta"
+        ? oktaNarrowing(identity, grant, replacement)
+        : [`Replace ${clean(grant.permission)} on ${clean(grant.resource)} with ${clean(replacement)} for ${clean(identity.id)} in the ${clean(identity.platform)} console.`];
   return [DRAFT_PREFIX, ...body].join("\n");
 }

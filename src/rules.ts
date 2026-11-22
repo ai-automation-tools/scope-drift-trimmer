@@ -2,6 +2,7 @@
 // (usageKnown: true) over a stated window; silence is never read as "unused".
 import { clean, draftNarrowing, draftRemoval } from "./remediation.ts";
 import type { AwsRecommendation } from "./inventory.ts";
+import { OKTA_WRITE_EVENTS } from "./okta.ts";
 import type { Finding, Grant, Identity } from "./types.ts";
 
 const DAY = 86_400_000;
@@ -16,6 +17,8 @@ export interface RuleContext {
   sources?: Record<string, string[]>;
   /** IAM Access Analyzer's recommended policy steps, per identity id. */
   awsRecommendations?: Record<string, AwsRecommendation[]>;
+  /** Okta .manage grants used, by inference, only to read, per identity id. */
+  oktaReadOnly?: Record<string, string[]>;
 }
 
 /** A finding plus the grant ids it calls unused, kept for the no-false-unused check. */
@@ -82,6 +85,11 @@ function whyNotJudged(identity: Identity, g: Grant): string {
     return g.permission === "iam:PassRole" ? "IAM records no use of iam:PassRole" : "IAM last-accessed data leaves out data-plane actions like this one";
   }
   if (identity.platform === "github") return "GitHub records no per-permission use for App permissions";
+  if (identity.platform === "okta") {
+    return identity.lastUsedAt === undefined
+      ? "the export holds no Okta System Log"
+      : "the System Log has events for this app but no access-token events that record their scopes";
+  }
   return "the platform records no use of it";
 }
 
@@ -141,8 +149,34 @@ function unusedGrants(identity: Identity, ctx: RuleContext): RuleFinding[] {
     );
 }
 
+/**
+ * An Okta .manage grant whose tokens were issued but whose writes never showed up in the System
+ * Log. Never "unused": the app may read with it, so the draft swaps it for the .read scope.
+ */
+function oktaReadOnly(identity: Identity, g: Grant, ctx: RuleContext): RuleFinding | null {
+  const ids = ctx.oktaReadOnly && Object.hasOwn(ctx.oktaReadOnly, identity.id) ? ctx.oktaReadOnly[identity.id] : undefined;
+  const writes = Object.hasOwn(OKTA_WRITE_EVENTS.prefixes, g.permission) ? OKTA_WRITE_EVENTS.prefixes[g.permission] : null;
+  if (identity.platform !== "okta" || !Array.isArray(ids) || !ids.includes(g.id) || !writes || !judgeable(identity, g) || !g.lastUsedAt) return null;
+  const read = g.permission.replace(/\.manage$/, ".read");
+  return finding("narrower-permission-available", identity, `:${g.id}`, {
+    severity: "medium",
+    title: `Narrower permission available: ${clean(identity.displayName)} holds ${clean(g.permission)} (${g.access}) but the System Log shows no writes; ${read} may be enough`,
+    evidence: [
+      `Source: ${sourceOf(identity, ctx)}.`,
+      `Window: ${g.observationDays} days, ${day(ctx.asOf - g.observationDays * DAY)} to ${day(ctx.asOf)} (the grant's observationDays).`,
+      `Access tokens issued to the app carried ${clean(g.permission)} (last ${clean(g.lastUsedAt)}), and the System Log records no ${writes.map((p) => `${p}*`).join(", ")} event by the app in the window.`,
+      `Inference: Okta logs writes but not reads, so the app reads as using ${clean(g.permission)} only to read. The event-to-scope mapping is this tool's (version ${OKTA_WRITE_EVENTS.version}), events are matched to the app by actor id, and a token's scopes come from debugData.grantedScopes, which Okta does not guarantee stable.`,
+      "This finding does not claim the grant is unused; check what the identity does before narrowing.",
+    ].join(" "),
+    remediation: draftNarrowing(identity, g, read),
+    unusedGrantIds: [],
+  });
+}
+
 function narrowerPermissionAvailable(identity: Identity, ctx: RuleContext): RuleFinding[] {
   return (identity.grants ?? []).flatMap((g) => {
+    const okta = oktaReadOnly(identity, g, ctx);
+    if (okta) return [okta];
     const entry = NARROWER_PERMISSIONS.entries.find(
       (e) => e.platform === identity.platform && e.permission === g.permission && e.access.includes(g.access ?? ""),
     );

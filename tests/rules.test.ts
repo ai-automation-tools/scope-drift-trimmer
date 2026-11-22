@@ -87,7 +87,8 @@ test("every remediation is a draft, shaped for its platform", () => {
   assert.match(draft("sp/0f5e2c1a-7b3d-4e8f-9a60-1c2d3e4f5a6b"), /DELETE https:\/\/graph\.microsoft\.com\/v1\.0\/servicePrincipals\/\{resource-sp-id\}\/appRoleAssignedTo\/Qm9ndXMtYXNzaWdubWVudC0x/);
   assert.match(draft("ci-deploy:iam:CreateUser"), /- {3}"iam:CreateUser",\n.*data-plane/);
   assert.match(draft("github:app/314159:administration"), /Before:\n {2}administration: write\nAfter:\n {2}repository_creation: write\n.*re-approved/);
-  assert.match(draft("oag1examplegrant3"), /DELETE https:\/\/\{yourOktaDomain\}\/api\/v1\/apps\/0oa1exampleapp2\/grants\/oag1examplegrant3\n.*okta\.users\.read/);
+  assert.match(draft("oag1examplegrant3"), /DELETE https:\/\/\{yourOktaDomain\}\/api\/v1\/apps\/0oa1exampleapp2\/grants\/oag1examplegrant3$/);
+  assert.doesNotMatch(draft("oag1examplegrant3"), /POST/, "nothing was observed reading, so no .read scope is granted back");
 });
 
 test("control characters in hostile input can't forge draft lines", () => {

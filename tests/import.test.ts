@@ -140,12 +140,92 @@ test("no rule calls a usageKnown: false grant unused in an import", () => {
 
 test("export files and inventories don't mix, and an unknown file is refused by name", () => {
   const mixed = [fixture("estate.inventory.json"), ...folder("entra")];
-  assert.throws(() => run(mixed), (e) => e instanceof InventoryError && /estate\.inventory\.json: not an AWS or Entra export/.test(e.message));
-  assert.throws(() => run([...folder("aws"), { name: "notes.json", content: '{"hello": 1}' }]), /notes\.json: not an AWS or Entra export/);
+  assert.throws(() => run(mixed), (e) => e instanceof InventoryError && /estate\.inventory\.json: not an AWS, Entra or Okta export/.test(e.message));
+  assert.throws(() => run([...folder("aws"), { name: "notes.json", content: '{"hello": 1}' }]), /notes\.json: not an AWS, Entra or Okta export/);
   assert.throws(() => run([...folder("aws"), fixture("malformed.json")]), /malformed\.json: not valid JSON/);
 });
 
 test("re-analyzing an imported document keeps its sources and the AWS draft", () => {
   const again = analyze({ name: "out.json", content: JSON.stringify(aws.document) }, { now: NOW });
   assert.deepEqual(again.findings.map((f) => [f.id, f.evidence, f.remediation]), aws.findings.map((f) => [f.id, f.evidence, f.remediation]));
+});
+
+const okta = run(folder("okta"));
+
+test("Okta: service apps only, with ids the grant revoke can use", () => {
+  assert.equal(validateInventory(okta.document), null);
+  assert.deepEqual(okta.document.identities.map((i) => i.displayName).sort(), ["audit-exporter", "group-sync-reader", "stale-offboarding-bot", "user-provisioner"], "the web app is skipped");
+  assert.equal(identity(okta, "user-provisioner").id, "okta:app/0oa1oktasvc00001");
+  assert.deepEqual(identity(okta, "user-provisioner").grants!.map((g) => g.permission), ["okta.users.manage", "okta.users.read", "okta.groups.manage"], "the revoked grant is skipped");
+  assert.equal(grant(okta, "user-provisioner", "okta.users.manage").id, "oag1oktagrant0101");
+  assert.deepEqual(okta.document.x!["scope-drift-trimmer"], {
+    sources: {
+      "okta:app/0oa1oktasvc00001": ["clients.json", "grants-0oa1oktasvc00001.json", "system-log.json"],
+      "okta:app/0oa1oktasvc00002": ["clients.json", "grants-others.json", "system-log.json"],
+      "okta:app/0oa1oktasvc00003": ["clients.json", "grants-others.json", "system-log.json"],
+      "okta:app/0oa1oktasvc00004": ["clients.json", "grants-others.json", "system-log.json"],
+    },
+    oktaReadOnly: { "okta:app/0oa1oktasvc00002": ["oag1oktagrant0201"] },
+  });
+});
+
+test("Okta: a scope is used when a token carried it, and unused when no token in 90 days did", () => {
+  const used = grant(okta, "user-provisioner", "okta.users.manage");
+  assert.deepEqual([used.usageKnown, used.lastUsedAt, used.observationDays], [true, "2026-11-01T08:00:00.000Z", 90]);
+  assert.equal(identity(okta, "user-provisioner").lastUsedAt, "2026-11-01T08:00:05.000Z");
+  const mine = findingsOf(okta, "user-provisioner");
+  assert.deepEqual(mine.map((f) => f.id), ["scope-drift-trimmer/unused-grant:okta:app/0oa1oktasvc00001:oag1oktagrant0103"], "users.manage wrote, so only groups.manage is flagged");
+  assert.match(mine[0].evidence!, /^Source: clients\.json, grants-0oa1oktasvc00001\.json, system-log\.json \(imported\)\. Window: 90 days, 2026-08-07 to 2026-11-05/);
+  assert.match(mine[0].remediation!, /DELETE https:\/\/\{yourOktaDomain\}\/api\/v1\/apps\/0oa1oktasvc00001\/grants\/oag1oktagrant0103$/);
+  assert.doesNotMatch(mine[0].remediation!, /POST/);
+});
+
+test("Okta: a .manage scope in tokens with no write event is a narrowing, marked inference, never unused", () => {
+  const g = grant(okta, "group-sync-reader", "okta.groups.manage");
+  assert.equal(g.lastUsedAt, "2026-10-20T03:00:00.000Z", "the failed token request doesn't count as carrying a scope");
+  const [f, ...rest] = findingsOf(okta, "group-sync-reader");
+  assert.equal(rest.length, 0);
+  assert.equal(f.ruleId, "scope-drift-trimmer/narrower-permission-available");
+  assert.equal(f.severity, "medium");
+  assert.match(f.evidence!, /no group\.\* event by the app in the window/, "an admin's group event isn't the app's");
+  assert.match(f.evidence!, /Inference: .*event-to-scope mapping is this tool's \(version \d{4}-\d\d-\d\d\).*debugData\.grantedScopes/);
+  assert.match(f.evidence!, /does not claim the grant is unused/);
+  assert.match(f.remediation!, /POST https:\/\/\{yourOktaDomain\}\/api\/v1\/apps\/0oa1oktasvc00002\/grants \{"issuer": "https:\/\/\{yourOktaDomain\}", "scopeId": "okta\.groups\.read"\}\n# Revoke okta\.groups\.manage from group-sync-reader\nDELETE https:\/\/\{yourOktaDomain\}\/api\/v1\/apps\/0oa1oktasvc00002\/grants\/oag1oktagrant0201/);
+});
+
+test("Okta: no event in the window makes the app dormant; events outside it are ignored", () => {
+  assert.equal(identity(okta, "stale-offboarding-bot").lastUsedAt, null);
+  const [f, ...rest] = findingsOf(okta, "stale-offboarding-bot");
+  assert.equal(rest.length, 0);
+  assert.equal(`${f.severity} ${f.ruleId}`, "high scope-drift-trimmer/dormant-privileged-identity");
+  assert.match(f.title, /holds okta\.users\.manage$/);
+  assert.match(f.evidence!, /Owner: not in the source data\./);
+});
+
+test("Okta: tokens that don't record their scopes, or no System Log at all, leave every grant unknown", () => {
+  assert.equal(grant(okta, "audit-exporter", "okta.users.manage").usageKnown, false);
+  const [f] = findingsOf(okta, "audit-exporter");
+  assert.equal(f.ruleId, "scope-drift-trimmer/usage-not-observable");
+  assert.match(f.evidence!, /no access-token events that record their scopes/);
+
+  const noLog = run(folder("okta").filter((file) => file.name !== "system-log.json"));
+  assert.ok(noLog.document.identities.flatMap((i) => i.grants!).every((g) => g.usageKnown === false));
+  assert.ok(noLog.document.identities.every((i) => !("lastUsedAt" in i)), "no log is unknown use, not no use");
+  assert.ok(noLog.findings.every((f) => f.ruleId === "scope-drift-trimmer/usage-not-observable"));
+  assert.match(noLog.findings[0].evidence!, /the export holds no Okta System Log/);
+});
+
+test("Okta: the client secret never reaches the output", () => {
+  const out = JSON.stringify(okta.document);
+  assert.ok(!out.includes("fixture-client-secret-not-real"));
+  assert.ok(!out.includes("client_secret"));
+});
+
+test("no rule calls a usageKnown: false grant unused in an Okta import", () => {
+  for (const f of okta.findings) {
+    const grants = okta.document.identities.find((i) => i.id === f.identityId)!.grants!;
+    for (const id of f.unusedGrantIds) assert.equal(grants.find((g) => g.id === id)!.usageKnown, true, f.id);
+  }
+  const again = analyze({ name: "out.json", content: JSON.stringify(okta.document) }, { now: NOW });
+  assert.deepEqual(again.findings.map((f) => [f.id, f.evidence, f.remediation]), okta.findings.map((f) => [f.id, f.evidence, f.remediation]), "re-analysis keeps the narrowing");
 });

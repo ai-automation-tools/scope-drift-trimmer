@@ -1,0 +1,88 @@
+[
+  {
+    "uuid": "5d0e1a2b-0000-4000-8000-000000000001",
+    "published": "2026-11-01T08:00:00.000Z",
+    "eventType": "app.oauth2.token.grant.access_token",
+    "displayMessage": "OIDC access token is granted",
+    "severity": "INFO",
+    "actor": { "id": "0oa1oktasvc00001", "type": "PublicClientApp", "alternateId": "0oa1oktasvc00001", "displayName": "user-provisioner" },
+    "client": { "ipAddress": "203.0.113.10" },
+    "outcome": { "result": "SUCCESS" },
+    "target": [{ "id": "AT.fixture-token-id-1", "type": "access_token", "displayName": "Access Token" }],
+    "debugContext": { "debugData": { "grantedScopes": "okta.users.manage okta.users.read", "requestUri": "/oauth2/v1/token" } },
+    "transaction": { "type": "WEB", "id": "fixture-transaction-1" }
+  },
+  {
+    "uuid": "5d0e1a2b-0000-4000-8000-000000000002",
+    "published": "2026-11-01T08:00:05.000Z",
+    "eventType": "user.lifecycle.create",
+    "displayMessage": "Create Okta user",
+    "severity": "INFO",
+    "actor": { "id": "0oa1oktasvc00001", "type": "PublicClientApp", "alternateId": "0oa1oktasvc00001", "displayName": "user-provisioner" },
+    "client": { "ipAddress": "203.0.113.10" },
+    "outcome": { "result": "SUCCESS" },
+    "target": [{ "id": "00u1oktanewhire01", "type": "User", "alternateId": "new.hire@example.com", "displayName": "New Hire" }],
+    "debugContext": { "debugData": { "requestUri": "/api/v1/users" } },
+    "transaction": { "type": "WEB", "id": "fixture-transaction-2" }
+  },
+  {
+    "uuid": "5d0e1a2b-0000-4000-8000-000000000003",
+    "published": "2026-10-20T03:00:00.000Z",
+    "eventType": "app.oauth2.token.grant.access_token",
+    "displayMessage": "OIDC access token is granted",
+    "severity": "INFO",
+    "actor": { "id": "0oa1oktasvc00002", "type": "PublicClientApp", "alternateId": "0oa1oktasvc00002", "displayName": "group-sync-reader" },
+    "client": { "ipAddress": "203.0.113.20" },
+    "outcome": { "result": "SUCCESS" },
+    "debugContext": { "debugData": { "grantedScopes": "okta.groups.manage", "requestUri": "/oauth2/v1/token" } },
+    "transaction": { "type": "WEB", "id": "fixture-transaction-3" }
+  },
+  {
+    "uuid": "5d0e1a2b-0000-4000-8000-000000000004",
+    "published": "2026-10-21T03:00:00.000Z",
+    "eventType": "app.oauth2.token.grant.access_token",
+    "displayMessage": "OIDC access token is granted",
+    "severity": "WARN",
+    "actor": { "id": "0oa1oktasvc00002", "type": "PublicClientApp", "alternateId": "0oa1oktasvc00002", "displayName": "group-sync-reader" },
+    "client": { "ipAddress": "203.0.113.20" },
+    "outcome": { "result": "FAILURE", "reason": "invalid_scope" },
+    "debugContext": { "debugData": { "requestedScopes": "okta.groups.manage okta.users.manage", "requestUri": "/oauth2/v1/token" } },
+    "transaction": { "type": "WEB", "id": "fixture-transaction-4" }
+  },
+  {
+    "uuid": "5d0e1a2b-0000-4000-8000-000000000005",
+    "published": "2026-07-01T09:00:00.000Z",
+    "eventType": "app.oauth2.token.grant.access_token",
+    "displayMessage": "OIDC access token is granted",
+    "severity": "INFO",
+    "actor": { "id": "0oa1oktasvc00003", "type": "PublicClientApp", "alternateId": "0oa1oktasvc00003", "displayName": "stale-offboarding-bot" },
+    "client": { "ipAddress": "203.0.113.30" },
+    "outcome": { "result": "SUCCESS" },
+    "debugContext": { "debugData": { "grantedScopes": "okta.users.manage", "requestUri": "/oauth2/v1/token" } },
+    "transaction": { "type": "WEB", "id": "fixture-transaction-5" }
+  },
+  {
+    "uuid": "5d0e1a2b-0000-4000-8000-000000000006",
+    "published": "2026-10-30T12:00:00.000Z",
+    "eventType": "app.oauth2.token.grant.access_token",
+    "displayMessage": "OIDC access token is granted",
+    "severity": "INFO",
+    "actor": { "id": "0oa1oktasvc00004", "type": "PublicClientApp", "alternateId": "0oa1oktasvc00004", "displayName": "audit-exporter" },
+    "client": { "ipAddress": "203.0.113.40" },
+    "outcome": { "result": "SUCCESS" },
+    "debugContext": { "debugData": { "requestUri": "/oauth2/v1/token" } },
+    "transaction": { "type": "WEB", "id": "fixture-transaction-6" }
+  },
+  {
+    "uuid": "5d0e1a2b-0000-4000-8000-000000000007",
+    "published": "2026-11-02T15:00:00.000Z",
+    "eventType": "group.user_membership.add",
+    "displayMessage": "Add user to group membership",
+    "severity": "INFO",
+    "actor": { "id": "00u1oktaadmin0001", "type": "User", "alternateId": "it.admin@example.com", "displayName": "IT Admin" },
+    "client": { "ipAddress": "198.51.100.5" },
+    "outcome": { "result": "SUCCESS" },
+    "target": [{ "id": "00g1oktagroup0001", "type": "UserGroup", "displayName": "Finance" }],
+    "transaction": { "type": "WEB", "id": "fixture-transaction-7" }
+  }
+]

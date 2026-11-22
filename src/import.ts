@@ -3,11 +3,12 @@
 import { awsAdapter } from "./aws.ts";
 import { entraAdapter } from "./entra.ts";
 import { inventoryAdapter, InventoryError, readJson, type Adapter, type SdtExtensions } from "./inventory.ts";
+import { oktaAdapter } from "./okta.ts";
 import { formatSchemaError, validateInventory } from "./schema.ts";
 import type { InputFile, Inventory } from "./types.ts";
 import { VERSION } from "./version.ts";
 
-export const EXPORT_ADAPTERS: Adapter[] = [awsAdapter, entraAdapter];
+export const EXPORT_ADAPTERS: Adapter[] = [awsAdapter, entraAdapter, oktaAdapter];
 
 /** The export adapter that reads this file, or null (an inventory, or something unknown). */
 export function exportAdapterFor(file: InputFile): Adapter | null {
@@ -21,11 +22,11 @@ export function importExports(files: InputFile[], asOf: Date): InputFile {
   for (const file of files) {
     const adapter = exportAdapterFor(file);
     if (!adapter) {
-      throw new InventoryError(`${file.name}: not an AWS or Entra export this tool reads; pass one inventory on its own, or export files only`);
+      throw new InventoryError(`${file.name}: not an AWS, Entra or Okta export this tool reads; pass one inventory on its own, or export files only`);
     }
     groups.set(adapter, [...(groups.get(adapter) ?? []), file]);
   }
-  const ext: Required<SdtExtensions> = { sources: {}, awsRecommendations: {} };
+  const ext: Required<SdtExtensions> = { sources: {}, awsRecommendations: {}, oktaReadOnly: {} };
   const doc: Inventory = {
     schemaVersion: "0.1",
     generatedAt: asOf.toISOString(),
@@ -34,10 +35,12 @@ export function importExports(files: InputFile[], asOf: Date): InputFile {
       const e = adapter.extensions?.(group, asOf);
       Object.assign(ext.sources, e?.sources);
       Object.assign(ext.awsRecommendations, e?.awsRecommendations);
+      Object.assign(ext.oktaReadOnly, e?.oktaReadOnly);
       return adapter.parse(group, asOf);
     }),
   };
   if (Object.keys(ext.awsRecommendations).length === 0) delete (ext as SdtExtensions).awsRecommendations;
+  if (Object.keys(ext.oktaReadOnly).length === 0) delete (ext as SdtExtensions).oktaReadOnly;
   doc.x = { "scope-drift-trimmer": ext };
   const err = validateInventory(doc);
   if (err) throw new InventoryError(`imported inventory failed schema validation: ${formatSchemaError(err)}`);

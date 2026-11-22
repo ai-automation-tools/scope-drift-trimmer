@@ -34,7 +34,7 @@ export function usageLabel(g: Grant): string {
   return `usageKnown: true · last used ${g.lastUsedAt ?? "none recorded"} · ${window}`;
 }
 
-/** Analyzes one inventory, or AWS and Entra export files. Throws InventoryError on bad input. */
+/** Analyzes one inventory, or AWS, Entra and Okta export files. Throws InventoryError on bad input. */
 export function buildView(input: InputFile | InputFile[], now?: Date): DemoView {
   const analysis = analyze(input, { now });
   const unused = new Set(analysis.findings.flatMap((f) => f.unusedGrantIds.map((g) => `${f.identityId}\u0000${g}`)));

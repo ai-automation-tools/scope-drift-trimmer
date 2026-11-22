@@ -6,7 +6,7 @@ Roadmap routine (Tuesday, Thursday and Saturday).
 ## What scope-drift-trimmer is
 
 An access-review tool for non-human identities: service principals, IAM roles, bots and
-agents. `sdt analyze` reads grants that a user exported from Entra ID or AWS IAM (or an
+agents. `sdt analyze` reads grants that a user exported from Entra ID, AWS IAM or Okta (or an
 agent inventory document another suite tool wrote), puts each grant next to the platform's
 own record of whether it was used, and grades how good that record is. Four rules raise
 findings: `dormant-privileged-identity`, `unused-grant`, `narrower-permission-available` and

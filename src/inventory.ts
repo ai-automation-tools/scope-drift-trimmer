@@ -46,6 +46,8 @@ export interface SdtExtensions {
   sources?: Record<string, string[]>;
   /** IAM Access Analyzer's recommended policy steps, per identity id. */
   awsRecommendations?: Record<string, AwsRecommendation[]>;
+  /** Okta .manage grant ids whose tokens were issued but no mapped write event was logged, per identity id. */
+  oktaReadOnly?: Record<string, string[]>;
 }
 
 export interface AwsRecommendation {
