@@ -21,6 +21,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/status-incubating-F59E0B?style=for-the-badge" alt="Status: incubating">
   <a href="docs/ROADMAP.md"><img src="https://img.shields.io/badge/plan-ROADMAP-8B5CF6?style=for-the-badge" alt="Roadmap"></a>
+  <a href="https://ai-automation-tools.dev/scope-drift-trimmer/"><img src="https://img.shields.io/badge/demo-live-2ea44f?style=for-the-badge" alt="Live Demo"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge" alt="License: MIT"></a>
 </p>
 
@@ -36,7 +37,7 @@
 > [!WARNING]
 > **Early.** `sdt analyze` reads an agent inventory document or AWS and Entra ID export files
 > and runs all four rules with draft fixes, and the demo page in `site/` runs the same engine
-> in a browser (it goes live with the Pages workflow). It isn't on npm yet. The
+> in a browser, [live here](https://ai-automation-tools.dev/scope-drift-trimmer/). It isn't on npm yet. The
 > [roadmap](docs/ROADMAP.md) says what's left before release.
 
 ## 🎯 What it's for
