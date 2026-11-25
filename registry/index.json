@@ -1,0 +1,40 @@
+{
+  "registryVersion": "1.0",
+  "templates": [
+    {
+      "id": "scope-drift-trimmer-inventory-review",
+      "name": "Scope Drift Trimmer: Inventory Access Review",
+      "description": "Runs `sdt analyze` on an Agent Security Suite inventory that another suite tool writes on its own schedule, and writes it back with scope-drift-trimmer findings: dormant privileged identities, unused grants, narrower permissions, and write or admin grants whose use the platform doesn't record. Fails the run when a finding is at or above the chosen severity, so the failure alert is the prompt to review. Every finding carries a draft remediation for a human to review and run; nothing is applied. Usage windows end at the inventory's own generatedAt, so the output file must not be the inventory: sdt stamps its output with the run's time. Reads one file, writes one, makes no network call and holds no credential. Needs Node 22.18 or newer and a clone of scope-drift-trimmer with `npm install` and `npm run build` run in it.",
+      "category": "monitoring",
+      "tags": [
+        "scope-drift-trimmer",
+        "access-review",
+        "nhi",
+        "iam",
+        "least-privilege"
+      ],
+      "runtime": "node",
+      "os": "cross-platform",
+      "compatibleTargets": [
+        "windows",
+        "cronsole-native",
+        "linux",
+        "macos"
+      ],
+      "path": "templates/scope-drift-trimmer-inventory-review.json",
+      "sha256": "2428969e2ae141115c37cc1edcd2d38daaf6a276b1f3eb841a045b59866b5137"
+    }
+  ],
+  "packs": [
+    {
+      "id": "scope-drift-trimmer",
+      "name": "Scope Drift Trimmer: Access Review",
+      "description": "Re-runs the non-human identity access review on the inventory the Agent Security Suite writes, and fails when a finding needs a human.",
+      "templateIds": [
+        "scope-drift-trimmer-inventory-review"
+      ],
+      "path": "packs/scope-drift-trimmer.json",
+      "sha256": "571064b8377369447356e288be5fc7a14bb4dd77c27501b7cf92c2acc9e7c607"
+    }
+  ]
+}
