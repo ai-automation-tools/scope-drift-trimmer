@@ -15,6 +15,8 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+- `CLAUDE.md` is gone: Claude Code reads `AGENTS.md` directly.
+
 **Added**
 - Upstream worklist: `docs/UPSTREAMS.md` lists the export formats, platform APIs and CDN/hosting assumptions the code depends on, for the biweekly upstream check; `.github/dependabot.yml` turns on weekly grouped npm and GitHub Actions updates (majors ignored).
 - Okta import: `sdt analyze` reads service apps from Okta's Client API, their scope grants and 90 days of System Log (`src/okta.ts`, export snippet in the README). A scope no access token carried in the window is `usageKnown: true` and can be unused; an app with no event in the window can be dormant; token events that don't record their scopes, or no System Log at all, leave every grant `usageKnown: false`. A `.manage` scope that tokens carried with no write event it covers raises `narrower-permission-available`, never `unused-grant`, with evidence marking the event-to-scope mapping as inference; its draft grants the `.read` scope back, and the plain Okta revoke draft no longer suggests one. The client secret is dropped. *Next slices*
