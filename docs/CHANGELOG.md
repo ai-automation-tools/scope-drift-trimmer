@@ -15,6 +15,8 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 
 ## Unreleased
 
+- `CLAUDE.md` is gone: Claude Code reads `AGENTS.md` directly.
+
 **Added**
 - A Cronsole template catalog: `scope-drift-trimmer-inventory-review` runs the built `sdt analyze` daily on an inventory another suite tool writes, to a separate output file, and fails at the chosen severity (`critical` by default). It is linked from the README's "Schedule it with Cronsole" section with its pack. `node scripts/build-registry.ts` writes it to `registry/` as Registry v1 with a sha256 index; `npm test` and a CI step fail when it is stale or a template runs anything but `analyze` with documented flags. `publish-registry.yml` mirrors it to the homepage repo from `main` and `registry-drift.yml` checks the hosted copy daily; neither can publish until the owner adds the deploy key. No export-folder template yet: export windows end at the run's time, queued as its own roadmap item. *Next slices*
 - Upstream worklist: `docs/UPSTREAMS.md` lists the export formats, platform APIs and CDN/hosting assumptions the code depends on, for the biweekly upstream check; `.github/dependabot.yml` turns on weekly grouped npm and GitHub Actions updates (majors ignored).
@@ -27,6 +29,10 @@ Entries that close a roadmap item carry the roadmap phase in italics.
 - `sdt analyze <inventory.json> [--out <file>] [--fail-on <severity>]`: reads an agent inventory, validates it against the vendored schema v0.1 (`schemas/agent-inventory.schema.json`), runs `dormant-privileged-identity`, `unused-grant`, `narrower-permission-available` and `usage-not-observable`, and writes the document back with its findings and Entra, AWS, GitHub and Okta draft remediations. Invalid input exits 2 with the schema path of the first error and writes nothing; other producers' identities, findings and `x` data pass through unchanged. The `Adapter` interface ships with the inventory-passthrough adapter and its contract test, and a test runs the CLI with outbound sockets blocked. *Slice 1: Engine and rules*
 
 **Docs**
+- Roadmap refresh: a new Next slices item, **Entra Agent ID identities in the Entra import**: agent identities come in as `ai-agent`, with their sponsor as the accountable owner. Why now: Entra Agent ID is generally available and `agentIdentity` is in Graph v1.0 (docs of 2026-10-23 and 2026-11-02), and the importer labels these agents `oauth-app` and ignores their sponsors.
+- README: status badge now active (was incubating), and the Live Demo badge links to `https://scope-drift-trimmer-demo.ai-automation-tools.dev/`.
+- ROADMAP: ticked the deploy key item: deploy key with write access on `scope-drift-trimmer-site`; its private half is `SITE_ORG_DEPLOY_KEY` in this repo's `registry-publish` environment, which only `main` can use, so the publish workflow must set `environment: registry-publish`.
+- Upstream check, 2026-11-25: every `docs/UPSTREAMS.md` row read against its source, no code drift found. The consent-script row now says the demo page doesn't load `consent.js`; the Toolchain table has the registry's latest majors; the GitHub Actions and ESLint 10 bumps are queued on the roadmap. *Next slices*
 - The demo is live at `https://ai-automation-tools.dev/scope-drift-trimmer/` (build stamp `b5e2972`); the README hero has a Live Demo badge and the early-warning note no longer says the page is still to go live. *Public release*
 - README usage checked against the packed build: install from an `npm pack` tarball, `-v` and `-h` in the flag table, both sample runs re-run as installed, and the Won't list now says no secret is held or printed. `*.tgz` is gitignored. *Public release*
 - Responsible use section in the README (defensive only, your own or authorized systems, drafts only, fictional demo data), linked from `SECURITY.md`. *Public release*
