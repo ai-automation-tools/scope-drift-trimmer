@@ -1,0 +1,38 @@
+name: Registry drift
+
+# Daily: is the Cronsole catalog the homepage serves
+# (scope-drift-trimmer.ai-automation-tools.dev/registry/) the one in registry/ on main, with the CORS
+# header the Cronsole gallery needs? A publish that failed or never ran leaves registry/ correct and the
+# public copy stale, and nothing inside the repo can see that. A failure here means run the Publish
+# registry workflow (and check its deploy key). Copied from edge-spectrum's, with the check folded into
+# the builder: `node scripts/build-registry.ts --published`.
+on:
+  schedule:
+    - cron: '47 6 * * *'
+  workflow_run:
+    workflows: [Publish registry]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Not `verify`: that is the CI job's name, and a skipped job here must never stand in for it.
+  live:
+    if: github.repository == 'ai-automation-tools/scope-drift-trimmer'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Pages takes a minute or two to rebuild after a publish.
+      - name: Wait for Pages after a publish
+        if: github.event_name == 'workflow_run'
+        run: sleep 180
+      - name: Hosted catalog matches registry/
+        run: node scripts/build-registry.ts --published

@@ -28,6 +28,14 @@ write is validated against it. Identity ids are `<platform>:<native id>`. Findin
 producers' identities, findings and `x` data pass through unchanged. Never add a field the
 schema doesn't allow; put extras in `x`.
 
+A Cronsole template catalog (`registry/`, written by `node scripts/build-registry.ts`) offers
+`sdt analyze` on a suite inventory as a scheduled run. Edit the templates in the script, never
+the output; `npm test` and a CI step fail when `registry/` is stale or a template runs anything
+but the built CLI's `analyze` with `--out`/`--fail-on` parameters. `publish-registry.yml`
+mirrors it into the private `scope-drift-trimmer-site` repo and `registry-drift.yml` checks the
+hosted copy daily. `build-registry.ts --published` is the one build tool that reaches the
+network; the CLI and the demo still never do.
+
 Full spec: `docs/product/spec.md`. Slice order: `docs/product/build-plan.md`. Work queue:
 `docs/ROADMAP.md`.
 

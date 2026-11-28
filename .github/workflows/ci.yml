@@ -48,3 +48,7 @@ jobs:
 
       - name: Validate the output against the published schema
         run: node scripts/check-inventory.ts sample.out.json
+
+      # Also run by `npm test`; its own step so a stale Cronsole catalog is named in the run.
+      - name: Cronsole catalog in registry/ is current
+        run: node scripts/build-registry.ts --check

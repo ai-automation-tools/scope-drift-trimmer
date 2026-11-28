@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "id": "scope-drift-trimmer-inventory-review",
+  "name": "Scope Drift Trimmer: Inventory Access Review",
+  "description": "Runs `sdt analyze` on an Agent Security Suite inventory that another suite tool writes on its own schedule, and writes it back with scope-drift-trimmer findings: dormant privileged identities, unused grants, narrower permissions, and write or admin grants whose use the platform doesn't record. Fails the run when a finding is at or above the chosen severity, so the failure alert is the prompt to review. Every finding carries a draft remediation for a human to review and run; nothing is applied. Usage windows end at the inventory's own generatedAt, so the output file must not be the inventory: sdt stamps its output with the run's time. Reads one file, writes one, makes no network call and holds no credential. Needs Node 22.18 or newer and a clone of scope-drift-trimmer with `npm install` and `npm run build` run in it.",
+  "runtime": "node",
+  "os": "cross-platform",
+  "category": "monitoring",
+  "tags": [
+    "scope-drift-trimmer",
+    "access-review",
+    "nhi",
+    "iam",
+    "least-privilege"
+  ],
+  "icon": "ShieldCheck",
+  "trigger": {
+    "kind": "schedule",
+    "cron": "15 7 * * *"
+  },
+  "commandTemplate": "node \"{{repoPath}}/dist/src/cli.js\" analyze \"{{inventoryFile}}\" --out \"{{outputFile}}\" --fail-on \"{{failOn}}\"",
+  "parameters": [
+    {
+      "key": "repoPath",
+      "label": "scope-drift-trimmer clone",
+      "type": "path",
+      "required": true,
+      "help": "Absolute path to your clone of ai-automation-tools/scope-drift-trimmer, with `npm install` and `npm run build` run in it."
+    },
+    {
+      "key": "inventoryFile",
+      "label": "Inventory file",
+      "type": "path",
+      "required": true,
+      "help": "The agent inventory (schema v0.1) another suite tool writes. Not a platform export: point sdt at an export the day you take it."
+    },
+    {
+      "key": "outputFile",
+      "label": "Output file",
+      "type": "path",
+      "required": true,
+      "help": "Where the inventory with findings goes, overwritten each run. Not the inventory file itself: the output is stamped with the run's time, so analyzing it again would end every window after the data stops."
+    },
+    {
+      "key": "failOn",
+      "label": "Fail at severity",
+      "type": "select",
+      "default": "critical",
+      "options": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "info"
+      ],
+      "required": true,
+      "help": "The run fails when a finding is at or above this severity. critical is a dormant privileged identity with no owner on record."
+    }
+  ],
+  "compatibleTargets": [
+    "windows",
+    "cronsole-native",
+    "linux",
+    "macos"
+  ],
+  "execution": {
+    "timeoutSec": 120,
+    "retries": 0
+  },
+  "author": "ai-automation-tools",
+  "version": "0.1.0"
+}

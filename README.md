@@ -294,6 +294,26 @@ AWS wildcard is never judged from last-accessed data. Every finding's evidence n
 the window and the source file, and every draft starts with `DRAFT. A human reviews and runs
 this. Validate against the target environment first.`
 
+### Schedule it with Cronsole
+
+Re-running the review on an inventory another suite tool writes is a template in the
+[Cronsole](https://cronsole.ai-automation-tools.dev/) gallery. It runs the built CLI in your clone,
+`node <clone>/dist/src/cli.js analyze <inventory.json> --out <file> --fail-on critical`, and makes
+no network call.
+
+| Template | Runs | When |
+|:---|:---|:---|
+| [**Inventory Access Review**](https://cronsole.ai-automation-tools.dev/#/t/scope-drift-trimmer-inventory-review) | `sdt analyze` on the inventory, writing it with findings to a separate file. The run fails when a finding is at or above the severity you pick (`critical` by default). | daily |
+
+[As a pack](https://cronsole.ai-automation-tools.dev/#/collection/scope-drift-trimmer). The output
+can't be the inventory file: `sdt` stamps its output with the run's time, so analyzing it again would
+end every window after the data stops. For the same reason there is no template for an export folder
+yet: an export's windows end when `sdt` runs, and a scheduled run on a folder nobody refreshed would
+call grants unused after the data stopped. The catalog is built by
+`node scripts/build-registry.ts` into [`registry/`](registry/) and published to
+`https://scope-drift-trimmer.ai-automation-tools.dev/registry/`, where the gallery reads it. Until
+the first publish, the gallery links don't open the template yet.
+
 ## 🗂️ What's in here
 
 | Folder | What's inside |
@@ -302,6 +322,7 @@ this. Validate against the target environment first.`
 | [**🧩 src/**](src/) | The `sdt` CLI, the engine, the rules, the draft templates and the AWS, Entra and Okta importers. One TypeScript core that the browser demo imports too. |
 | [**📐 schemas/**](schemas/) | The Agent Security Suite's agent inventory schema v0.1, vendored. Every read and write is validated against it. |
 | [**🧪 tests/**](tests/) | `node:test` suites, run with `npm test`, over fictional fixtures, including AWS, Entra and Okta exports built from the documented response shapes. |
+| [**⏱️ registry/**](registry/) | The Cronsole template catalog, written by `node scripts/build-registry.ts`. Don't edit it by hand. |
 | [**🖥️ site/**](site/) | The demo page: `index.html`, the fictional `sample.inventory.json`, and `demo.ts`/`app.ts`, which import the engine from `src/`. `npm run build` writes it to `_site/`. |
 
 ## 🛠️ Development
@@ -315,6 +336,11 @@ npm run build   # tsc to dist/, and the demo to _site/
 CI also runs `sdt analyze` on the demo's planted estate and `scripts/check-inventory.ts` on the
 result: the vendored schema has to match the [published one](https://ai-automation-tools.dev/schemas/agent-inventory/v0.1.json),
 the output has to validate, and `legacy-invoice-sync` has to be flagged `critical`.
+
+CI runs `node scripts/build-registry.ts --check` too, which fails when `registry/` is stale or a
+template runs anything but `analyze` with the documented flags. On a push to `main` that changes
+`registry/`, `.github/workflows/publish-registry.yml` mirrors it to the homepage repo, and
+`.github/workflows/registry-drift.yml` checks the hosted copy daily.
 
 On every push to `main`, `.github/workflows/pages.yml` runs `npm run build`, stamps the page's
 `<meta name="build">` with the commit and publishes `_site/` to GitHub Pages.

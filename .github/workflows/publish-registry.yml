@@ -1,0 +1,110 @@
+# Publish the Cronsole template catalog in registry/ to the homepage host,
+# https://scope-drift-trimmer.ai-automation-tools.dev/registry/, on the merge that changes it.
+#
+# The homepage is the private ai-automation-tools/scope-drift-trimmer-site repo, served by GitHub Pages
+# (which sends Access-Control-Allow-Origin: *, as the Cronsole gallery needs). The catalog is built here,
+# next to the CLI it runs, and mirrored there: the same arrangement as cronsole's publish-registry.yml.
+# registry-drift.yml is the backstop that catches this job failing quietly.
+name: Publish registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'registry/**'
+      - '.github/workflows/publish-registry.yml'
+  workflow_dispatch:
+
+# The mirror is a wholesale replace, so an out-of-order push would serve an older catalog than main.
+# Queue, don't cancel: a cancelled publish is an unpublished one.
+concurrency:
+  group: publish-registry
+  cancel-in-progress: false
+
+# The push to the site repo goes over SITE_ORG_DEPLOY_KEY; the GitHub token only reads. The key is a
+# secret of the registry-publish environment, whose deployment branch rule allows main only, so a
+# workflow on any other branch, or a dispatch from one, can't read it or publish an unreviewed catalog.
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Mirror registry/ to scope-drift-trimmer-site
+    if: github.repository == 'ai-automation-tools/scope-drift-trimmer' && github.ref == 'refs/heads/main'
+    environment: registry-publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (source of truth)
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Never publish a catalog the builder wouldn't write. The builder has no dependencies to install.
+      - name: registry/ is current
+        working-directory: source
+        run: node scripts/build-registry.ts --check
+
+      # A missing key fails here, by name, not at the push as an opaque permission denial.
+      - name: Require the deploy key
+        env:
+          DEPLOY_KEY: ${{ secrets.SITE_ORG_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::SITE_ORG_DEPLOY_KEY is not set, so the catalog was NOT published. Add a deploy key with write access to ai-automation-tools/scope-drift-trimmer-site as the secret SITE_ORG_DEPLOY_KEY of this repo's registry-publish environment, limited to the main branch."
+            exit 1
+          fi
+
+      - name: Checkout the site repo (publish target)
+        uses: actions/checkout@v4
+        with:
+          repository: ai-automation-tools/scope-drift-trimmer-site
+          ssh-key: ${{ secrets.SITE_ORG_DEPLOY_KEY }}
+          path: target
+
+      # CNAME decides which host serves the catalog. The index's sha256 is over exact bytes, so the JSON
+      # must stay LF in the target too.
+      - name: Check the target's domain and line-ending pin
+        working-directory: target
+        run: |
+          set -euo pipefail
+          if [ "$(tr -d '[:space:]' < CNAME 2>/dev/null)" != 'scope-drift-trimmer.ai-automation-tools.dev' ]; then
+            echo "::error::The CNAME in scope-drift-trimmer-site is missing or names another host: the catalog would not be served at the documented address."
+            exit 1
+          fi
+          echo "Custom domain: $(cat CNAME)"
+          for f in registry/index.json registry/templates/x.json registry/packs/x.json; do
+            eol=$(git check-attr eol -- "$f" | awk '{print $NF}')
+            if [ "$eol" != "lf" ]; then
+              echo "::error::.gitattributes in scope-drift-trimmer-site does not pin $f to LF (eol: $eol). Add '*.json text eol=lf' there first."
+              exit 1
+            fi
+          done
+
+      # Replace registry/ wholesale, so a removed template stops being served. Nothing else in the site
+      # repo is touched.
+      - name: Mirror registry/
+        run: |
+          set -euo pipefail
+          rm -rf target/registry
+          cp -r source/registry target/registry
+
+      - name: Commit and push if changed
+        working-directory: target
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A registry
+          if git diff --cached --quiet; then
+            echo 'The site already serves this catalog: nothing to publish.'
+            exit 0
+          fi
+          git commit -q -m "Publish the Cronsole catalog (scope-drift-trimmer@${GITHUB_SHA:0:7})"
+          git push -q origin HEAD:main
+          echo "Published. GitHub Pages rebuilds shortly: https://$(cat CNAME)/registry/index.json"
